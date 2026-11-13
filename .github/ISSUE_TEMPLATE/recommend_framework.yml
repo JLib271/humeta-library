@@ -1,6 +1,6 @@
 name: Recommend a theory, conceptual model, or framework
 description: Suggest a theory, lens, or framework for Module 2's framework list
-labels: [library, framework]
+labels: [recommend framework]
 body:
   - type: markdown
     attributes:
