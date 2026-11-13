@@ -17,9 +17,12 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import build_library_site as B  # noqa: E402
+import build_site as B  # noqa: E402  (also puts the HuMeta Portal's code on the path)
 from oem.library import Library  # noqa: E402
-from oem.vocab import library_page_url  # noqa: E402
+
+
+def load() -> Library:
+    return Library.load(ROOT)
 
 
 @pytest.fixture(scope="module")
@@ -30,7 +33,7 @@ def site(tmp_path_factory):
 
 
 def test_every_record_has_a_page(site):
-    lib = Library.load()
+    lib = load()
     for iid in lib.instruments:
         assert (site / "instruments" / B.slug(iid) / "index.html").is_file()
     for fid, fw in lib.frameworks.items():
@@ -43,9 +46,33 @@ def test_every_record_has_a_page(site):
 
 
 def test_page_urls_match_the_app(site):
-    lib = Library.load()
-    iid = next(iter(lib.instruments))
-    assert library_page_url("instruments", iid).endswith(B.Site.url("instruments", iid))
+    """The portal links to record pages by the same address scheme the site uses."""
+    from oem import vocab
+    iid = next(iter(load().instruments))
+    assert vocab.library_page_url("instruments", iid).endswith(B.Site.url("instruments", iid))
+
+
+def test_published_archive_is_the_library(site, tmp_path):
+    import hashlib
+    import tarfile
+    manifest = json.loads((site / "data" / "library.json").read_text(encoding="utf-8"))
+    archive = site / "data" / manifest["archive"]
+    assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["sha256"]
+    with tarfile.open(archive) as tar:
+        names = tar.getnames()
+        tar.extractall(tmp_path, filter="data")
+    assert len(names) == manifest["files"] and all(n.startswith("library/") for n in names)
+    assert not any(n.startswith(("library/scripts", "library/site", "library/tests", "library/suggestions")) for n in names)
+    published = Library.load(tmp_path / "library")
+    assert set(published.instruments) == set(load().instruments)
+    assert published.item_files.keys() == load().item_files.keys()
+
+
+def test_archive_is_reproducible(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    B.main(["--out", str(a)])
+    B.main(["--out", str(b)])
+    assert (a / "data" / "library.tar.gz").read_bytes() == (b / "data" / "library.tar.gz").read_bytes()
 
 
 def test_internal_links_resolve(site):
@@ -65,7 +92,7 @@ def test_internal_links_resolve(site):
 
 
 def test_downloads(site):
-    lib = Library.load()
+    lib = load()
     with (site / "data" / "instruments.csv").open(encoding="utf-8") as f:
         assert len(list(csv.DictReader(f))) == len(lib.instruments)
     with (site / "data" / "evidence.csv").open(encoding="utf-8") as f:
@@ -80,7 +107,7 @@ def test_downloads(site):
 def _fake_library(tmp_path, shareable: bool) -> Path:
     """A copy of the library with one instrument whose item text sharing is switched on or off."""
     root = tmp_path / "library"
-    shutil.copytree(ROOT / "library", root)
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "_site", "__pycache__"))
     path = root / "instruments" / "gci.json"
     rec = json.loads(path.read_text(encoding="utf-8"))
     rec["access"]["item_text_shareable"] = shareable
@@ -93,7 +120,7 @@ def test_item_text_and_images_follow_access(tmp_path, shareable):
     out = tmp_path / "_site"
     B.main(["--out", str(out), "--library", str(_fake_library(tmp_path, shareable))])
     html = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
-    stem = json.loads((ROOT / "library" / "items" / "gci" / "gci-v4-2014.json").read_text(encoding="utf-8"))["items"][0]["stem"]
+    stem = json.loads((ROOT / "items" / "gci" / "gci-v4-2014.json").read_text(encoding="utf-8"))["items"][0]["stem"]
     figures = list((out / "instruments" / "gci" / "figures").glob("*.png")) if (out / "instruments" / "gci" / "figures").exists() else []
     if shareable:
         assert B.h(stem) in html and figures
@@ -103,7 +130,7 @@ def test_item_text_and_images_follow_access(tmp_path, shareable):
 
 
 def test_answer_keys_never_shown_without_permission(site):
-    lib = Library.load()
+    lib = load()
     for iid, inst in lib.instruments.items():
         if not inst.get("access", {}).get("answer_key_shareable"):
             html = (site / "instruments" / B.slug(iid) / "index.html").read_text(encoding="utf-8")
@@ -120,7 +147,7 @@ def test_instrument_filters(site):
 
 def test_compare_page_and_profiles(site):
     html = (site / "compare" / "index.html").read_text(encoding="utf-8")
-    lib = Library.load()
+    lib = load()
     assert html.count("<tr data-") == len(lib.instruments)
     page = (site / "instruments" / "mslq" / "index.html").read_text(encoding="utf-8")
     assert 'id="profile"' in page and "15 values, 0.52 to 0.93; guide &gt; 0.7" in page
@@ -137,7 +164,7 @@ def test_recommend_page_and_issue_forms(site):
     ids = {b.get("id") for b in form["body"]}
     required = {b["id"] for b in form["body"] if b.get("validations", {}).get("required")}
     assert required == {"name", "citation", "measures"}
-    lib = Library.load()
+    lib = load()
     for cat in lib.rubric:  # the form's evidence checklist follows the rubric
         block = next(b for b in form["body"] if b.get("id") == f"rubric_{cat['id']}")
         assert [o["label"][0] for o in block["attributes"]["options"]] == [c["id"] for c in cat["criteria"]]

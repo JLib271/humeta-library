@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Validate the instrument library in library/.
+"""Validate the HuMeta instrument library (this repository).
 
 Checks every file against its JSON Schema, then checks cross-references:
 file names match ids, construct ids exist, evidence points at a real
 instrument/version/dimension, and source_verified records have no open
 needs_check items.
 
-Usage: python scripts/validate_library.py [path/to/library]
+HuMeta vocabulary terms (disciplines, participant roles, and so on) are checked
+against the HuMeta profile's vocabularies.json, downloaded from
+https://github.com/JLib271/humeta-profile unless --vocabularies gives a local
+copy. If it cannot be read, those checks are skipped with a warning.
+
+Usage: python scripts/validate_library.py [path/to/library] [--vocabularies PATH_OR_URL]
 Exit code 0 = valid, 1 = problems found.
 """
 from __future__ import annotations
@@ -17,7 +22,11 @@ import json
 import sys
 from pathlib import Path
 
+import urllib.request
+
 from jsonschema import Draft202012Validator, FormatChecker
+
+VOCABULARIES_URL = "https://raw.githubusercontent.com/JLib271/humeta-profile/main/vocabularies.json"
 
 
 def load(path: Path):
@@ -32,7 +41,7 @@ def schema_errors(validator: Draft202012Validator, data, label: str) -> list[str
     ]
 
 
-def main(library: Path) -> int:
+def main(library: Path, vocabularies: str | None = None) -> int:
     problems: list[str] = []
     schemas = library / "schema"
     fmt = FormatChecker()
@@ -77,11 +86,13 @@ def main(library: Path) -> int:
                     problems.append(f"{label}: path {path.get('from')} -> {path.get('to')} uses an unknown construct")
 
     # HuMeta vocabularies: the library describes instruments and samples with the standard's own terms
-    vocab_path = Path(__file__).resolve().parent.parent / "standard" / "humeta" / "vocabularies.json"
     humeta: dict[str, set[str]] = {}
-    if vocab_path.exists():
+    vocab_doc = load_vocabularies(vocabularies)
+    if vocab_doc is None and vocabularies:
+        problems.append(f"could not read the HuMeta vocabularies from {vocabularies}")
+    if vocab_doc:
         humeta = {name: {t["id"] for t in voc.get("terms", []) if not t.get("deprecated")}
-                  for name, voc in load(vocab_path)["vocabularies"].items()}
+                  for name, voc in vocab_doc["vocabularies"].items()}
 
     def check_terms(values, vocabulary: str, label: str, field: str):
         if not humeta:
@@ -316,7 +327,7 @@ def main(library: Path) -> int:
             lic = basis.get("license", "")
             short = lic.split(" (")[0]
             if short and short not in license_text:
-                problems.append(f"instruments/{iid}.json: item text license '{lic}' is not listed in library/LICENSE.md")
+                problems.append(f"instruments/{iid}.json: item text license '{lic}' is not listed in LICENSE.md")
 
     if problems:
         print(f"Library validation failed with {len(problems)} problem(s):")
@@ -335,6 +346,24 @@ def main(library: Path) -> int:
     return 0
 
 
+def load_vocabularies(source: str | None) -> dict | None:
+    """The HuMeta profile's vocabularies.json from a path or URL, or None (with a warning) if unreadable."""
+    source = source or VOCABULARIES_URL
+    try:
+        if source.startswith(("https://", "http://")):
+            with urllib.request.urlopen(source, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        return json.loads(Path(source).read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 - any failure means "skip the vocabulary checks"
+        print(f"Warning: could not read the HuMeta vocabularies ({source}): {exc}. "
+              "Vocabulary terms were not checked.", file=sys.stderr)
+        return None
+
+
 if __name__ == "__main__":
-    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "library"
-    sys.exit(main(root))
+    import argparse
+    ap = argparse.ArgumentParser(description="Validate the HuMeta instrument library.")
+    ap.add_argument("library", nargs="?", type=Path, default=Path(__file__).resolve().parent.parent)
+    ap.add_argument("--vocabularies", help="path or URL of the HuMeta profile's vocabularies.json")
+    args = ap.parse_args()
+    sys.exit(main(args.library, args.vocabularies))

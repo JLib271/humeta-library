@@ -1,0 +1,6 @@
+# The validator, site builder, and tests. The site builder also needs a checkout of the
+# HuMeta Portal (https://github.com/JLib271/HuMeta) next to this repository or in $HUMETA_DIR.
+jsonschema[format]>=4.18
+pytest>=8
+PyYAML>=6
+ruff>=0.17.3

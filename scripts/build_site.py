@@ -1,43 +1,72 @@
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Build the HuMeta Library website from ``library/``.
+"""Build the HuMeta Library website from this repository's records.
 
 The site is static: one page per instrument, theory or lens, and construct,
 a reference page for response scales and standard variables, a search page,
 and downloads (the library's JSON records and CSV lists). It reads the library
 through ``oem.library.Library``, the same reader the HuMeta Portal uses, so
-the site and the app always show the same records.
+the site and the app always show the same records. That code lives in the
+HuMeta Portal repository: clone https://github.com/JLib271/HuMeta next to this
+repository (or set ``HUMETA_DIR`` to a checkout of it). Labels for HuMeta
+vocabulary terms come from the profile copy in that checkout.
+
+The site also publishes the library's own files, ``data/library.tar.gz`` with
+``data/library.json`` describing it, which is how the HuMeta Portal reads the
+library.
 
 Item text, item images and answer keys are published only where the
 instrument's ``access`` record allows it, the same rules
 ``scripts/validate_library.py`` enforces.
 
-    python scripts/build_library_site.py            # writes _site/
-    python scripts/build_library_site.py --out DIR
+    python scripts/build_site.py            # writes _site/
+    python scripts/build_site.py --out DIR
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import gzip
+import hashlib
 import io
 import json
+import os
 import shutil
 import sys
+import tarfile
 from datetime import date
 from html import escape
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
+
+
+def find_humeta() -> Path:
+    """A checkout of the HuMeta Portal: $HUMETA_DIR, or HuMeta/ next to this repository."""
+    for candidate in (os.environ.get("HUMETA_DIR"), REPO.parent / "HuMeta", REPO.parent / "humeta"):
+        if candidate and (Path(candidate) / "oem" / "library.py").is_file():
+            return Path(candidate).resolve()
+    raise SystemExit("The site builder uses the HuMeta Portal's code. Clone https://github.com/JLib271/HuMeta "
+                     "next to this repository, or set HUMETA_DIR to a checkout of it.")
+
+
+HUMETA = find_humeta()
+sys.path.insert(0, str(HUMETA))
 
 from oem import evidence as EV  # noqa: E402
 from oem import instrument_metadata as IM  # noqa: E402
 from oem.library import Library  # noqa: E402
-from oem.vocab import LIBRARY_SITE_URL, PORTAL_URL  # noqa: E402
+from oem.vocab import PORTAL_URL  # noqa: E402
 
-ASSETS = REPO / "library_site"
-REPO_URL = "https://github.com/JLib271/HuMeta"
+#: This website's address
+LIBRARY_SITE_URL = "https://jlib271.github.io/humeta-library/"
+ASSETS = REPO / "site" / "assets"
+REPO_URL = "https://github.com/JLib271/humeta-library"
+#: The library's own files, as published in data/library.tar.gz for the HuMeta Portal
+DATA_DIRS = ("instruments", "items", "evidence", "schema")
+DATA_FILES = ("constructs.json", "frameworks.json", "scales.json", "standard_variables.json",
+              "evidence_rubric.json", "LICENSE.md")
 COMMONS_URL = "https://stemedplus.hcommons.org/"
 COLLECTION_URL = "https://works.hcommons.org/collections/humetainstrumentlibrary/"
 STEMEDPLUS_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus/"
@@ -215,7 +244,7 @@ class Site:
 {body}
 </main>
 <footer><div class="wrap">
-<p>Library records are licensed <a href="{REPO_URL}/blob/main/library/LICENSE.md">CC BY-SA 4.0</a>; item text carries the license shown on each instrument. Built {self.today} from the <a href="{REPO_URL}/tree/main/library">library folder</a> of the HuMeta repository.</p>
+<p>Library records are licensed <a href="{REPO_URL}/blob/main/LICENSE.md">CC BY-SA 4.0</a>; item text carries the license shown on each instrument. Built {self.today} from the <a href="{REPO_URL}">humeta-library repository</a>.</p>
 {self.join_box("bottom")}
 <h2><a href="{COMMONS_URL}">More from STEMEd+ Commons</a></h2>
 <ul>
@@ -881,7 +910,7 @@ class Site:
                  '<h2>Downloads</h2><p>Every record is available as JSON, the same files the HuMeta Portal reads. Lists as CSV: '
                  f'<a href="{root}data/instruments.csv">instruments</a>, <a href="{root}data/frameworks.csv">theories and lenses</a>, '
                  f'<a href="{root}data/constructs.csv">constructs</a>, <a href="{root}data/evidence.csv">evidence</a>. '
-                 f'The record format is published as JSON Schemas in the {ext(REPO_URL + "/tree/main/library/schema", "library schema folder")}.</p>',
+                 f'The record format is published as JSON Schemas in the {ext(REPO_URL + "/tree/main/schema", "library schema folder")}.</p>',
                  f'<h2>Contribute</h2><p><a href="{root}recommend/">Recommend an instrument</a> that is missing, or use the '
                  '"Suggest a correction" link at the bottom of any record. Suggestions are reviewed before they are added.</p>',
                  f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)} (accessed {self.today}).</p>']
@@ -977,6 +1006,39 @@ class Site:
                 + self.recommend_note(what, name, page))
 
     # ---------- data
+    def write_archive(self, data: Path) -> None:
+        """data/library.tar.gz: the library's own files under library/, for the HuMeta Portal to read.
+
+        The archive is byte-for-byte the same for the same files (sorted, no times or owners), and
+        data/library.json gives its checksum, so the portal can tell whether anything changed.
+        """
+        root = self.lib.root
+        paths = [root / name for name in DATA_FILES if (root / name).is_file()]
+        for folder in DATA_DIRS:
+            paths += [p for p in (root / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
+        paths = sorted(paths, key=lambda p: p.relative_to(root).as_posix())
+        raw = io.BytesIO()
+        with tarfile.open(fileobj=raw, mode="w", format=tarfile.PAX_FORMAT) as tar:
+            for path in paths:
+                info = tarfile.TarInfo("library/" + path.relative_to(root).as_posix())
+                content = path.read_bytes()
+                info.size, info.mode, info.mtime = len(content), 0o644, 0
+                tar.addfile(info, io.BytesIO(content))
+        packed = gzip.compress(raw.getvalue(), mtime=0)
+        (data / "library.tar.gz").write_bytes(packed)
+        manifest = {
+            "format": "humeta-library-archive",
+            "archive": "library.tar.gz",
+            "sha256": hashlib.sha256(packed).hexdigest(),
+            "files": len(paths),
+            "built": self.today,
+            "commit": os.environ.get("GITHUB_SHA", ""),
+            "source": REPO_URL,
+            "counts": {"instruments": len(self.lib.instruments), "constructs": len(self.lib.constructs),
+                       "frameworks": len(self.lib.frameworks), "evidence": len(self.lib.evidence)},
+        }
+        (data / "library.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
     def write_data(self) -> None:
         data = self.out / "data"
         (data / "instruments").mkdir(parents=True, exist_ok=True)
@@ -997,6 +1059,7 @@ class Site:
             dest.write_text(json.dumps(clean, indent=2, ensure_ascii=False), encoding="utf-8")
         for name in ("frameworks.json", "constructs.json", "scales.json", "standard_variables.json"):
             shutil.copyfile(self.lib.root / name, data / name)
+        self.write_archive(data)
 
         def write_csv(name, header, rows):
             buf = io.StringIO()
@@ -1105,14 +1168,14 @@ class Site:
 
 def humeta_labels() -> dict[str, dict[str, str]]:
     """Term labels of every HuMeta vocabulary: {vocabulary: {term id: label}}."""
-    vocab = json.loads((REPO / "standard" / "humeta" / "vocabularies.json").read_text(encoding="utf-8"))
+    vocab = json.loads((HUMETA / "standard" / "humeta" / "vocabularies.json").read_text(encoding="utf-8"))
     return {name: {t["id"]: t["label"] for t in v.get("terms", [])} for name, v in vocab["vocabularies"].items()}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=REPO / "_site")
-    ap.add_argument("--library", type=Path, default=None, help="library folder (default: library/)")
+    ap.add_argument("--library", type=Path, default=REPO, help="library folder (default: this repository)")
     args = ap.parse_args(argv)
     site = Site(Library.load(args.library), args.out, humeta_labels())
     site.build()

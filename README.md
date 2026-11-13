@@ -10,27 +10,46 @@ The library describes instruments. It never stores item text, unless an
 instrument's terms explicitly allow republishing, and even then it links
 instead of copying by default.
 
-## Layout
+**Browse it at the [HuMeta Library website](https://jlib271.github.io/humeta-library/).**
+Recommend an instrument, theory, or correction from its
+[Recommend page](https://jlib271.github.io/humeta-library/recommend/), or with
+the [issue forms](https://github.com/JLib271/humeta-library/issues/new/choose).
+
+## This repository
+
+This is the library's home, for instrument experts, reviewers, and the
+governance committee: the records, the community recommendations waiting for
+review, the validator, and the website. The
+[HuMeta Portal](https://github.com/JLib271/HuMeta), which researchers use to
+plan studies, reads the library from the files this website publishes
+(`data/library.tar.gz`, described by `data/library.json`), so a change merged
+here reaches the portal once the website is rebuilt, with no change to the
+portal.
 
 ```
-library/
-  constructs.json              shared construct vocabulary (what things measure)
-  frameworks.json              theories, theoretical lenses, and framework approaches
-                               used by Module 2, with each theory's constructs
-  instruments/<id>.json        one file per instrument
-  evidence/<instrument-id>/<record-id>.json
-                               one file per reliability/validity result
-  items/<instrument-id>/<version-id>.json
-                               the items in one version: always a crosswalk,
-                               plus item text only where permitted
-  schema/                      JSON Schemas for all three
-scripts/validate_library.py    run before opening a PR
+constructs.json              shared construct vocabulary (what things measure)
+frameworks.json              theories, theoretical lenses, and framework approaches
+                             used by the portal's Module 2, with each theory's constructs
+instruments/<id>.json        one file per instrument
+evidence/<instrument-id>/<record-id>.json
+                             one file per reliability/validity result
+items/<instrument-id>/<version-id>.json
+                             the items in one version: always a crosswalk,
+                             plus item text only where permitted
+scales.json, standard_variables.json, evidence_rubric.json
+schema/                      JSON Schemas for every record type
+suggestions/                 recommendations awaiting review (see suggestions/README.md)
+scripts/validate_library.py  run before opening a pull request
+scripts/build_site.py        builds the website (uses the HuMeta Portal's code)
+scripts/check_recommendation.py, kcworks_lookup.py
+                             check the Knowledge Commons deposit on a recommendation
+site/assets/                 the website's styles, script, and logos
 ```
 
 ## Speaking HuMeta
 
 The library describes instruments and evidence samples with the HuMeta
-standard's own vocabularies ([`vocabularies.json`](https://github.com/JLib271/humeta-profile/blob/main/vocabularies.json), copied in `standard/humeta/`), so an
+standard's own vocabularies ([`vocabularies.json`](https://github.com/JLib271/humeta-profile/blob/main/vocabularies.json) in the HuMeta profile), so an
 instrument and a study described with HuMeta use the same words:
 
 | Library field | HuMeta vocabulary |
@@ -40,15 +59,16 @@ instrument and a study described with HuMeta use the same words:
 | `settings`, evidence `sample.setting` | `learning_environment` |
 | `participants`, evidence `sample.participants` | `participant_role`: who the instrument gathers data about (for an observation protocol, the people observed) |
 | evidence `sample.institution_type` | `institution_type` |
-| `instrument_type` (library's own, finer) | maps to `data_collection_method` (`oem/instrument_metadata.py`) |
+| `instrument_type` (library's own, finer) | maps to `data_collection_method` ([`oem/instrument_metadata.py`](https://github.com/JLib271/HuMeta/blob/main/oem/instrument_metadata.py) in the portal) |
 | rubric categories and criteria | map to `measurement_evidence` (`humeta_evidence` in `evidence_rubric.json`) |
 
 `scripts/validate_library.py` rejects terms that are not current (unknown or
-deprecated) in the HuMeta vocabulary. To add a term the library needs, add it to
-the HuMeta vocabulary, with a changelog entry, rather than to the library.
+deprecated) in the HuMeta vocabulary. To add a term the library needs, propose
+it in the [HuMeta profile](https://github.com/JLib271/humeta-profile/issues/new/choose)
+rather than adding it to the library.
 
 **DataCite.** Each instrument record is also published as DataCite 4.7 metadata
-(`oem/instrument_metadata.py`; `data/datacite/<id>.json` on the Library
+([`oem/instrument_metadata.py`](https://github.com/JLib271/HuMeta/blob/main/oem/instrument_metadata.py) in the portal; `data/datacite/<id>.json` on the Library
 website), and its Library page embeds a schema.org description. The instrument
 is typed `Text` with resource type "Research instrument: ..." (KCWorks files
 instruments as Text document > Other; DataCite's `Instrument` type is meant for
@@ -98,7 +118,7 @@ reliability, II Forms reliability, III Item analysis, IV Pre-item content
 validity, V Post-item content validity, VI Communication validity, VII Cultural
 validity, VIII Scale analysis, IX Criterion and construct validity, X
 Multiple-choice item writing, XI Likert-type item writing), each with lettered
-criteria. `oem/evidence.py` builds the profile:
+criteria. The portal's [`oem/evidence.py`](https://github.com/JLib271/HuMeta/blob/main/oem/evidence.py) builds the profile:
 
 - Evidence records meet criteria through their type and statistic (a
   `cronbach_alpha` record meets I.A and I.B; a `test_retest` record meets II.C;
@@ -159,7 +179,7 @@ and `consent_share`. Each has a `sensitivity` rating (`direct_identifier`,
 review before data are shared.
 
 **Variable names** are generated, not typed, using the rules in
-`oem/naming.py`: `<instrument prefix>_<item_id>` (e.g. `gci_q05`), one 0/1
+The portal's [`oem/naming.py`](https://github.com/JLib271/HuMeta/blob/main/oem/naming.py): `<instrument prefix>_<item_id>` (e.g. `gci_q05`), one 0/1
 variable per option for select-all items (`gci_q01_c`), fixed names for
 standard variables, and `_pre` / `_post` / `_t1` … suffixes for repeated
 measures. Each instrument's `variable_prefix` must be unique and never change
@@ -184,9 +204,9 @@ library is never a claim that an instrument is valid for a particular study.
    `info_sources`, write descriptions in your own words, and list anything you
    couldn't confirm in `review.needs_check` rather than guessing. Use `null` for
    unknown numbers.
-3. Run `python scripts/validate_library.py` (requires `pip install jsonschema`).
-4. Open a pull request. The **Validate instrument library** GitHub Action runs
-   the same check.
+3. Run `python scripts/validate_library.py` (requires `pip install "jsonschema[format]"`).
+4. Open a pull request. The **Check** workflow runs the same check, builds the
+   website, and runs the tests. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Never include item text from restricted instruments, participant data, or
 unpublished results.

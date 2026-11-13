@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use the HuMeta Instrument Library, please cite it as below."
+title: "HuMeta Instrument Library"
+type: dataset
+authors:
+  - family-names: Libarkin
+    given-names: Julie C.
+    affiliation: Michigan State University
+  - name: "HuMeta Instrument Library contributors"
+repository: "https://github.com/JLib271/humeta-library"
+url: "https://jlib271.github.io/humeta-library/"
+license: CC-BY-SA-4.0
+keywords:
+  - research instruments
+  - measurement
+  - validity evidence
+  - education research
+  - social science research
+  - constructs

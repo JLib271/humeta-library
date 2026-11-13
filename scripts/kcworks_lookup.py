@@ -4,7 +4,7 @@
 
 KCWorks runs InvenioRDM, whose public API returns a record's metadata, including its license
 (``metadata.rights``) and the collections ("communities") it belongs to. Given a deposit link, this
-prints a ``commons_records`` entry for an instrument record in ``library/instruments/``:
+prints a ``commons_records`` entry for an instrument record in ``instruments/``:
 
     python scripts/kcworks_lookup.py https://works.hcommons.org/records/abcde-12345 --kind manual
     python scripts/kcworks_lookup.py https://doi.org/10.17613/wnm5z-00x75 --kind paper
@@ -26,7 +26,7 @@ SITE = "https://works.hcommons.org"
 #: KCWorks collections (InvenioRDM community slugs) that count: the HuMeta Instrument Library subcollection and its parent
 STEMEDPLUS_COLLECTIONS = ("humetainstrumentlibrary", "stemedplus")
 KCWORKS_DOI_PREFIX = "10.17613/"
-USER_AGENT = "HuMeta-Library (https://github.com/JLib271/HuMeta)"
+USER_AGENT = "HuMeta-Library (https://github.com/JLib271/humeta-library)"
 
 RECORD_RE = re.compile(r"works\.hcommons\.org/records/([a-z0-9]{5}-[a-z0-9]{5})", re.I)
 DOI_RE = re.compile(r"(10\.\d{4,9}/[^\s?#\"<>]+)", re.I)

@@ -8,8 +8,8 @@ JSON file:
 
 | Folder | What it holds | Where accepted content goes |
 |---|---|---|
-| `frameworks/` | Theories, lenses, conceptual models: name, kind, description, constructs (each with an optional shared construct and instruments that measure it), expected relationships, citation | `library/frameworks.json` |
-| `instruments/` | Instruments: name, citation, an **alignment table** mapping the whole instrument or each subscale (with its items) to the construct it measures, access and license, evidence, the submitter's relationship to it | `library/instruments/<id>.json` |
+| `frameworks/` | Theories, lenses, conceptual models: name, kind, description, constructs (each with an optional shared construct and instruments that measure it), expected relationships, citation | `frameworks.json` |
+| `instruments/` | Instruments: name, citation, an **alignment table** mapping the whole instrument or each subscale (with its items) to the construct it measures, access and license, evidence, the submitter's relationship to it | `instruments/<id>.json` |
 | `corrections/` | Changes to an existing framework, instrument, or construct | the file being corrected |
 
 Older free-text suggestions sit directly in this folder.

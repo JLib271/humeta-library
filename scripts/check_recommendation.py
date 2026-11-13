@@ -61,7 +61,7 @@ def build_comment(body: str, fetch=K.get_json) -> str:
     if not link:
         lines += ["No deposit link was given. Depositing the instrument, its manual, and its other files in one record in the "
                   "[HuMeta Instrument Library collection](https://works.hcommons.org/collections/humetainstrumentlibrary/) gives it a DOI and a link "
-                  "from its Library page ([how to deposit](https://jlib271.github.io/HuMeta/recommend/#deposit)). "
+                  "from its Library page ([how to deposit](https://jlib271.github.io/humeta-library/recommend/#deposit)). "
                   "Edit this issue to add the link and this check will run again."]
         return "\n\n".join(lines)
     try:

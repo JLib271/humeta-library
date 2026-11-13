@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        You can also recommend frameworks in the HuMeta Portal (Module 2 → **Recommend a theory or framework**), with no GitHub account needed. Check the current list in `library/frameworks.json` first.
+        You can also recommend frameworks in the HuMeta Portal (Module 2 → **Recommend a theory or framework**), with no GitHub account needed. Check the current list in [`frameworks.json`](https://github.com/JLib271/humeta-library/blob/main/frameworks.json) first.
   - type: input
     id: name
     attributes:
