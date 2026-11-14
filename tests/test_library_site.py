@@ -181,3 +181,23 @@ def test_commons_deposits(site):
     form = yaml.safe_load((ROOT / ".github" / "ISSUE_TEMPLATE" / "instrument_submission.yml").read_text(encoding="utf-8"))
     ids = {b.get("id") for b in form["body"]}
     assert {"commons_link", "commons_contents", "rights_holder"} <= ids and "commons_license" not in ids
+
+
+def test_dataset_pages_and_backlinks(tmp_path):
+    out = tmp_path / "site"
+    B.main(["--out", str(out), "--datasets", str(ROOT / "tests" / "sample_datasets.json")])
+    listing = (out / "datasets" / "index.html").read_text(encoding="utf-8")
+    assert "Deposits <span class=\"count\">(2)</span>" in listing and 'href="aaaaa-11111/"' in listing
+    page = (out / "datasets" / "aaaaa-11111" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../instruments/gci/"' in page and "made_up_theory" in page and "not in the library yet" in page
+    assert 'href="../bbbbb-22222/"' in page  # shares the GCI
+    gci = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../datasets/aaaaa-11111/"' in gci and 'href="../../datasets/bbbbb-22222/"' in gci
+    assert json.loads((out / "data" / "datasets.json").read_text(encoding="utf-8"))["datasets"][0]["id"]
+
+
+def test_no_datasets_still_builds_the_datasets_page(tmp_path):
+    out = tmp_path / "site"
+    B.main(["--out", str(out), "--datasets", str(tmp_path / "missing.json")])
+    assert "No datasets have been deposited" in (out / "datasets" / "index.html").read_text(encoding="utf-8")
+    assert json.loads((out / "data" / "datasets.json").read_text(encoding="utf-8"))["datasets"] == []
