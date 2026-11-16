@@ -42,18 +42,18 @@ def record(rid, *, files=("data.csv", "humeta.json"), files_public=True, subject
     }
 
 
-def fake(records, fail=False, published=None):
+def fake(records, fail=False, published=None, slug="stemedplus-data"):
     calls = []
 
     def fetch(url):
         calls.append(url)
-        if fail and "/communities/stemedplus-data/records" in url:
+        if fail and f"/communities/{slug}/records" in url:
             raise OSError("offline")
-        if url == F.PUBLISHED_INDEX:
+        if url in (F.PUBLISHED_INDEX, F.PUBLISHED_STUDY_INDEX):
             if published is None:
                 raise OSError("no site yet")
             return published
-        if "/communities/stemedplus-data/records" in url:
+        if f"/communities/{slug}/records" in url:
             return {"hits": {"hits": records}}
         if url.endswith("/files/humeta.json/content"):
             return HUMETA
@@ -113,3 +113,21 @@ def test_offline_without_a_published_index_is_empty():
 def test_deposit_and_collection_links():
     assert F.deposit_url() == "https://works.hcommons.org/uploads/new?community=stemedplus-data"
     assert F.collection_url() == "https://works.hcommons.org/collections/stemedplus-data"
+
+
+def test_studies_collection_is_indexed_under_studies():
+    index = F.build_index(fetch=fake([record("sssss-00001")], slug="stemedplus-studies"), kind="studies")
+    assert index["format"] == "humeta-study-index" and index["collection"] == "stemedplus-studies"
+    s = index["studies"][0]
+    assert s["doi"] == "10.17613/sssss-00001" and s["instruments"] == ["gci"] and s["profile_doi"] == ""
+
+
+def test_dataset_carries_the_study_doi_from_its_profile(monkeypatch):
+    monkeypatch.setitem(HUMETA, "resource", {"identifier": {"value": "https://doi.org/10.17613/SSSSS-00001", "type": "DOI"}})
+    d = F.build_index(fetch=fake([record("aaaaa-11111")]))["datasets"][0]
+    assert d["profile_doi"] == "10.17613/sssss-00001"
+
+
+def test_offline_studies_reuse_the_published_study_index():
+    published = {"format": "humeta-study-index", "studies": [{"id": "old"}]}
+    assert F.build_index(fetch=fake([], fail=True, published=published, slug="stemedplus-studies"), kind="studies") == published
