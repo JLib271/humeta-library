@@ -201,3 +201,26 @@ def test_no_datasets_still_builds_the_datasets_page(tmp_path):
     B.main(["--out", str(out), "--datasets", str(tmp_path / "missing.json")])
     assert "No datasets have been deposited" in (out / "datasets" / "index.html").read_text(encoding="utf-8")
     assert json.loads((out / "data" / "datasets.json").read_text(encoding="utf-8"))["datasets"] == []
+
+
+def test_study_pages_link_datasets_and_library_records(tmp_path):
+    out = tmp_path / "site"
+    B.main(["--out", str(out), "--datasets", str(ROOT / "tests" / "sample_datasets.json"),
+            "--studies", str(ROOT / "tests" / "sample_studies.json")])
+    listing = (out / "studies" / "index.html").read_text(encoding="utf-8")
+    assert "Registered studies <span class=\"count\">(1)</span>" in listing and 'href="sssss-00001/"' in listing
+    page = (out / "studies" / "sssss-00001" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../instruments/gci/"' in page
+    assert 'href="../../datasets/aaaaa-11111/"' in page and 'href="../../datasets/bbbbb-22222/"' not in page
+    dataset = (out / "datasets" / "aaaaa-11111" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../studies/sssss-00001/"' in dataset
+    gci = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../studies/sssss-00001/"' in gci
+    assert json.loads((out / "data" / "studies.json").read_text(encoding="utf-8"))["studies"][0]["id"] == "sssss-00001"
+
+
+def test_no_studies_still_builds_the_studies_page(tmp_path):
+    out = tmp_path / "site"
+    B.main(["--out", str(out), "--datasets", str(tmp_path / "missing.json"), "--studies", str(tmp_path / "missing.json")])
+    assert "No studies have been registered" in (out / "studies" / "index.html").read_text(encoding="utf-8")
+    assert json.loads((out / "data" / "studies.json").read_text(encoding="utf-8"))["studies"] == []

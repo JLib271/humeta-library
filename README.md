@@ -29,6 +29,20 @@ data stay in the STEMEd+ Library. `scripts/fetch_datasets.py` reads the
 collection's public records daily; the HuMeta Portal reads the resulting
 `data/datasets.json` to suggest related data.
 
+## Studies
+
+The [Studies](https://jlib271.github.io/humeta-library/studies/) pages list
+studies registered in the STEMEd+ Library's
+[Studies collection](https://works.hcommons.org/collections/stemedplus-studies):
+a study's design (its HuMeta profile as a PDF and `humeta.json`), deposited
+from the HuMeta Portal's Module 3 to give the study its own DOI, often before
+any data are collected. Study pages link to the instruments, constructs, and
+theories the study uses, and to the datasets that come from it: a dataset
+belongs to a study when its `humeta.json` records the study's DOI (the portal
+adds it once the study is registered) or lists the study's DOI as a related
+work. `scripts/fetch_datasets.py --kind studies` reads the collection daily
+into `data/studies.json`.
+
 ## This repository
 
 This is the library's home, for instrument experts, reviewers, and the
@@ -55,7 +69,7 @@ schema/                      JSON Schemas for every record type
 suggestions/                 recommendations awaiting review (see suggestions/README.md)
 scripts/validate_library.py  run before opening a pull request
 scripts/build_site.py        builds the website (uses the HuMeta Portal's code)
-scripts/fetch_datasets.py    reads the STEMEd+ Library's Data collection for the Datasets pages
+scripts/fetch_datasets.py    reads the STEMEd+ Library's Data and Studies collections for the Datasets and Studies pages
 scripts/check_recommendation.py, kcworks_lookup.py
                              check the Knowledge Commons deposit on a recommendation
 site/assets/                 the website's styles, script, and logos

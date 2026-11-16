@@ -78,6 +78,8 @@ SIGNUP_URL = "https://github.com/signup"
 #: Datasets: the STEMEd+ Library's Data subcollection on Knowledge Commons (see scripts/fetch_datasets.py)
 DATA_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus-data"
 DATA_DEPOSIT_URL = "https://works.hcommons.org/uploads/new?community=stemedplus-data"
+#: Registered studies: the STEMEd+ Library's Studies subcollection (fetch_datasets.py --kind studies)
+STUDIES_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus-studies"
 
 
 def correction_url(record_name: str, page_url: str) -> str:
@@ -194,13 +196,17 @@ def status_tag(status: str | None) -> str:
 
 # ---------------------------------------------------------------- site
 class Site:
-    def __init__(self, lib: Library, out: Path, vocab: dict[str, dict[str, str]], datasets: dict | None = None):
+    def __init__(self, lib: Library, out: Path, vocab: dict[str, dict[str, str]], datasets: dict | None = None,
+                 studies: dict | None = None):
         self.lib = lib
         self.out = out
         self.vocab = vocab
         #: The dataset index from scripts/fetch_datasets.py (empty if none was fetched)
         self.dataset_index = datasets or {"format": "humeta-dataset-index", "datasets": []}
         self.datasets: list[dict] = list(self.dataset_index.get("datasets") or [])
+        #: The study index from scripts/fetch_datasets.py --kind studies (empty if none was fetched)
+        self.study_index = studies or {"format": "humeta-study-index", "studies": []}
+        self.studies: list[dict] = list(self.study_index.get("studies") or [])
         from oem import profile as P
         self.profile = P.load()
         self.disciplines = vocab.get("discipline", {})
@@ -243,7 +249,7 @@ class Site:
 <div class="sp-bar"><div class="sp-in"><a class="sp-logo" href="https://stemedplus.org/"><img src="{root}assets/stemedplus-commons-logo-white.png" alt="STEMEd+ Commons home" width="263" height="91"></a><input type="checkbox" id="sp-menu-toggle" class="sp-toggle"><label for="sp-menu-toggle" class="sp-burger"><span class="sp-burger-icon" aria-hidden="true"></span>Menu</label><nav class="sp-nav" aria-label="STEMEd+ Commons"><ul class="sp-top"><li class="sp-has"><a href="https://stemedplus.org/stemed-features/">Features</a><svg class="sp-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1.5 4L6 8L10.5 4" stroke="currentColor" stroke-width="1.5"/></svg><ul class="sp-sub"><li><a href="https://works.hcommons.org/collections/stemedplus/records?q=&amp;l=list&amp;p=1&amp;s=10&amp;sort=newest">STEMEd+ Library</a></li><li><a href="https://stemedplus.org/sites/">STEMEd+ Sites</a></li><li><a href="https://stemedplus.profile.hcommons.org/members/">STEMEd+ Members</a></li><li><a href="https://stemedplus.org/stemed-groups/">STEMEd+ Groups</a></li></ul></li><li class="sp-has"><a href="https://stemedplus.org/stemed-resources/">Resources</a><svg class="sp-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1.5 4L6 8L10.5 4" stroke="currentColor" stroke-width="1.5"/></svg><ul class="sp-sub"><li><a href="https://stemedplus.org/stemed-commons-frequently-asked-questions/">STEMEd+ Commons FAQ</a></li><li><a href="https://theseekershub.stemedplus.org/">The Seekers’ Hub: A Job Board</a></li><li><a href="https://stemedplus.org/stemed-collaborators/">Find Collaborators</a></li><li><a href="https://jlib271.github.io/stemed-funding/">Find Funding</a></li><li><a href="https://jlib271.github.io/STEMEd-Digest/">STEMEd+ Digest</a></li><li><a href="https://jlib271.github.io/stem-ed-research-programs/">STEMEd+ Graduate Programs</a></li><li><a href="https://jlib271.github.io/stemed-conferences/">STEMEd+ Conferences</a></li><li><a href="https://jlib271.github.io/stemed-professional-learning/">Professional Learning: K-12, Informal Education</a></li><li><a href="https://jlib271.github.io/stemed-faculty-development/">STEMEd+ Faculty Development</a></li><li><a href="https://jlib271.github.io/stemed-deadlines/">STEMEd+ Deadlines</a></li></ul></li><li class="sp-has"><a href="https://stemedplus.org/about/">Learn More</a><svg class="sp-chev" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1.5 4L6 8L10.5 4" stroke="currentColor" stroke-width="1.5"/></svg><ul class="sp-sub"><li><a href="https://stemedplus.org/about/">About</a></li><li><a href="https://stemedplus.org/learn-more/">Governance</a></li><li><a href="https://stemedplus.org/vision-research/">Vision &amp; Research</a></li><li><a href="https://support.hcommons.org/">Help &amp; Support</a></li></ul></li><li><a href="https://stemedplus.org/collaborate/">Partner with Us</a></li><li><a href="https://stemedplus.org/contact-us/">Contact Us</a></li><li><a href="https://stemedplus.org/join-stemed/">Join STEMEd+</a></li><li><a href="https://stemedplus.org/stemed-commons-frequently-asked-questions/">Get Started &amp; FAQs</a></li></ul></nav><a class="sp-login" href="https://stemedplus.org/wp-login.php">Log in</a></div></div>
 <header class="top"><div class="wrap">
 <a class="brand" href="{root}">HuMeta Library</a>
-<nav aria-label="Library sections"><a href="{root}#instrument">Instruments</a> <a href="{root}#theory">Theories and lenses</a> <a href="{root}#construct">Constructs</a> <a href="{root}datasets/">Datasets</a> <a href="{root}compare/">Compare instruments</a> <a href="{root}reference/">Scales and variables</a> <a href="{root}about/">About</a> <a class="navbtn" href="{root}recommend/">Recommend an instrument</a></nav>
+<nav aria-label="Library sections"><a href="{root}#instrument">Instruments</a> <a href="{root}#theory">Theories and lenses</a> <a href="{root}#construct">Constructs</a> <a href="{root}studies/">Studies</a> <a href="{root}datasets/">Datasets</a> <a href="{root}compare/">Compare instruments</a> <a href="{root}reference/">Scales and variables</a> <a href="{root}about/">About</a> <a class="navbtn" href="{root}recommend/">Recommend an instrument</a></nav>
 </div></header>
 <div class="wrap top-join">{self.join_box("top")}</div>
 <main id="main" class="wrap">
@@ -474,6 +480,7 @@ class Site:
                 vlabel = next((v.get("label", vid) for v in versions if v["version_id"] == vid), vid)
                 parts.append(self.items_block(inst, vid, vlabel, rec, text_ok, key_ok))
 
+        parts.append(self.studies_section(self.studies_with("instruments", iid), root, "this instrument"))
         parts.append(self.datasets_section(self.datasets_with("instruments", iid), root, "this instrument"))
         # review and sources
         if review.get("needs_check"):
@@ -812,6 +819,7 @@ class Site:
                          'check that an instrument fits how this theory defines the construct.</p><ul>'
                          + "".join(f'<li><a href="{root}{self.url("instruments", i)}">{h(insts[i]["name"])}</a></li>'
                                    for i in sorted(insts, key=lambda k: insts[k]["name"].lower())) + "</ul>")
+        parts.append(self.studies_section(self.studies_with("frameworks", fid), root, "this theory"))
         parts.append(self.datasets_section(self.datasets_with("frameworks", fid), root, "this theory"))
         parts.append(self.record_footer("theory record", "data/frameworks.json", root, name=fw["label"],
                                          page=self.url("frameworks", fid)))
@@ -852,6 +860,7 @@ class Site:
                 for f, fc in fws) + "</ul>")
         else:
             parts.append("<p>No theories in the library are linked to this construct yet.</p>")
+        parts.append(self.studies_section(self.studies_with("constructs", cid), root, "this construct"))
         parts.append(self.datasets_section(self.datasets_with("constructs", cid), root, "this construct"))
         parts.append(self.record_footer("construct", "data/constructs.json", root, name=c["label"],
                                          page=self.url("constructs", cid)))
@@ -896,6 +905,10 @@ class Site:
         if ds.get("description"):
             parts.append(f'<p class="lead">{h(ds["description"])}</p>')
         parts.append(f'<p class="cta"><a class="btn" href="{h(ds["url"])}">Get the data from the STEMEd+ Library</a></p>')
+        study = self.study_of(ds)
+        if study:
+            parts.append(f'<p class="note">From the registered study <a href="{root}{self.url("studies", study["id"])}">'
+                         f'{h(study["title"])}</a>.</p>')
         facts = [("Creators", ", ".join(ds.get("creators") or [])), ("Published", ds.get("date")),
                  ("DOI", ds.get("doi")), ("License", "; ".join(ds.get("licenses") or [])),
                  ("Topic", ds.get("topic")),
@@ -951,7 +964,7 @@ class Site:
 {f'<ul id="datasets-list" class="all">{listing}</ul>' if rows else "<p>No datasets have been deposited in the Data collection yet. Be the first: see below.</p>"}
 <h2 id="add">How to add a dataset</h2>
 <ol>
-<li><strong>Describe your study in the {ext(PORTAL_URL or REPO_URL, "HuMeta Portal")}</strong> (Modules 1 to 3), including the instruments and constructs you used, then download your <strong>HuMeta profile</strong> (<code>humeta.json</code>) from Module 4.</li>
+<li><strong>Describe your study in the {ext(PORTAL_URL or REPO_URL, "HuMeta Portal")}</strong> (Modules 1 to 3), including the instruments and constructs you used, and <a href="../studies/#add">register it</a> to give the study its own DOI. Then download your <strong>HuMeta profile</strong> (<code>humeta.json</code>) from Module 4; it carries the study's DOI, so the dataset is listed under its study.</li>
 <li><strong>{ext(DATA_DEPOSIT_URL, "Deposit in the STEMEd+ Library's Data collection")}</strong> on Knowledge Commons (free; sign in with Google, ORCID, GitHub, or your institution). Upload your data files and <code>humeta.json</code>.</li>
 <li><strong>Add the HuMeta keywords</strong> the portal gives you, such as <code>humeta:instrument:gci</code> or <code>humeta:construct:self_efficacy</code>. If your files are restricted, the keywords are how your deposit gets linked, because <code>humeta.json</code> can't be read.</li>
 </ol>
@@ -970,6 +983,95 @@ class Site:
 }})();
 </script>"""
         self.write_page("datasets/", "Datasets", body, "Research datasets in the STEMEd+ Library, linked to the instruments and constructs they used.")
+
+    # ---------- registered studies (STEMEd+ Library Studies collection)
+    def studies_with(self, kind: str, rid: str) -> list[dict]:
+        """Registered studies whose humeta.json or HuMeta keywords name this instrument, construct, or theory."""
+        return [st for st in self.studies if rid in (st.get(kind) or [])]
+
+    def studies_section(self, found: list[dict], root: str, what: str) -> str:
+        if not found:
+            return ""
+        return (f'<h2 id="studies">Studies in the STEMEd+ Library</h2><p class="note">Registered studies that use {h(what)}.</p><ul>'
+                + "".join(f'<li><a href="{root}{self.url("studies", st["id"])}">{h(st["title"])}</a>'
+                          f'<span class="note">: {h(self.dataset_byline(st))}</span></li>' for st in found) + "</ul>")
+
+    def study_of(self, ds: dict) -> dict | None:
+        """The registered study a dataset belongs to: the study DOI in its humeta.json, or a related work's DOI."""
+        dois = {(ds.get("profile_doi") or "").lower()} | {str(r).lower() for r in ds.get("related") or []}
+        dois.discard("")
+        return next((st for st in self.studies if st.get("doi") and st["doi"].lower() in dois
+                     and st.get("id") != ds.get("id")), None)
+
+    def study_page(self, st: dict) -> None:
+        root = "../../"
+        parts = ['<p class="crumb"><a href="../">Studies</a></p>', f'<h1>{h(st["title"])}</h1>',
+                 '<div class="tags"><span class="tag k">STEMEd+ Library</span><span class="tag k">Registered study</span>'
+                 + ('<span class="tag ok">HuMeta profile</span>' if st.get("has_humeta") else "") + "</div>"]
+        if st.get("description"):
+            parts.append(f'<p class="lead">{h(st["description"])}</p>')
+        parts.append(f'<p class="cta"><a class="btn" href="{h(st["url"])}">See the registration in the STEMEd+ Library</a></p>')
+        facts = [("Study team", ", ".join(st.get("creators") or [])), ("Registered", st.get("date")),
+                 ("DOI", st.get("doi")), ("Topic", st.get("topic")),
+                 ("Disciplines", ", ".join(self.disc(x) for x in st.get("disciplines") or [])),
+                 ("Education levels", ", ".join(self.term("education_level", x) for x in st.get("education_levels") or [])),
+                 ("Participants", ", ".join(self.term("participant_role", x) for x in st.get("participant_roles") or [])),
+                 ("Study design", ", ".join(self.term("study_design", x) for x in st.get("study_designs") or [])),
+                 ("Sample size (planned or actual)", str(st["sample_size"]) if st.get("sample_size") else ""),
+                 ("Keywords", ", ".join(st.get("keywords") or []))]
+        parts.append(self.facts(facts))
+        groups = [("instruments", "Instruments"), ("constructs", "Constructs"), ("frameworks", "Theories and lenses")]
+        if any(st.get(k) for k, _ in groups):
+            parts.append('<h2 id="connects">Connects to the HuMeta Library</h2>')
+            for kind, title in groups:
+                if st.get(kind):
+                    parts.append(f"<h3>{h(title)}</h3><ul>" + "".join(f"<li>{self.linked(kind, x, root)}</li>" for x in st[kind]) + "</ul>")
+        data = [d for d in self.datasets if self.study_of(d) is st]
+        if data:
+            parts.append('<h2 id="datasets">Datasets from this study</h2><ul>'
+                         + "".join(f'<li><a href="{root}{self.url("datasets", d["id"])}">{h(d["title"])}</a>'
+                                   f'<span class="note">: {h(self.dataset_byline(d))}</span></li>' for d in data) + "</ul>")
+        if st.get("related"):
+            parts.append('<h2 id="works">Related works</h2><ul>' + "".join(
+                f"<li>{doi_link(r) if r.startswith('10.') else ext(r)}</li>" for r in st["related"]) + "</ul>")
+        parts.append('<p class="note">Listed from the registration\'s public record in the STEMEd+ Library. To correct it, edit '
+                     'the deposit on Knowledge Commons (or add a new version); this page updates within a day.</p>')
+        self.write_page(self.url("studies", st["id"]), st["title"], "\n".join(parts), st.get("description", ""))
+
+    def studies_page(self) -> None:
+        rows = sorted(self.studies, key=lambda d: (d.get("date") or ""), reverse=True)
+        listing = "".join(
+            f'<li data-text="{h(" ".join([d["title"], " ".join(d.get("creators") or []), " ".join(d.get("keywords") or []), d.get("topic") or "", " ".join(d.get("instruments") or []), " ".join(d.get("constructs") or [])]).lower())}">'
+            f'<a href="{self.url("studies", d["id"])[len("studies/"):]}">{h(d["title"])}</a>'
+            f'<span class="note">: {h(self.dataset_byline(d))}</span></li>' for d in rows)
+        fetched = self.study_index.get("fetched")
+        body = f"""<h1>Studies</h1>
+<p class="lead">Studies registered in the {ext(STUDIES_COLLECTION_URL, "STEMEd+ Library's Studies collection")} on Knowledge Commons: each study's design, with its own DOI, linked to the theories, constructs, and instruments it uses.</p>
+<p>A study is registered once its design is described, often before any data are collected. Its datasets and other outputs then link back to its DOI. This page lists the registrations' public descriptions{f" (checked {h(fetched)})" if fetched else ""}.</p>
+{'<form class="controls" role="search" onsubmit="return false"><div class="search"><label for="sq">Search studies</label><input id="sq" type="search" placeholder="Title, author, topic, instrument, construct…" autocomplete="off"></div></form>' if rows else ""}
+<h2>Registered studies <span class="count">({len(rows)})</span></h2>
+{f'<ul id="studies-list" class="all">{listing}</ul>' if rows else "<p>No studies have been registered in the Studies collection yet. Be the first: see below.</p>"}
+<h2 id="add">How to register a study</h2>
+<ol>
+<li><strong>Define your study in the {ext(PORTAL_URL or REPO_URL, "HuMeta Portal")}</strong>: describe it (Module 1), then choose its theory and measures (Module 2).</li>
+<li><strong>Register it in Module 3</strong> (Check, Register &amp; Export): download the study profile as a PDF and as <code>humeta.json</code>, and deposit both in the {ext(STUDIES_COLLECTION_URL, "Studies collection")} (free; sign in with Google, ORCID, GitHub, or your institution). Add the HuMeta keywords the portal gives you.</li>
+<li><strong>Save the DOI</strong> Knowledge Commons gives you back in the portal. Datasets you deposit later carry it, so they are listed under the study.</li>
+</ol>
+<p class="note">Registrations are public and permanent. Register when you are ready for the design to be public; add a new version if the study changes. Your study appears here within a day.</p>
+<script>
+(function () {{
+  var q = document.getElementById("sq"), items = document.querySelectorAll("#studies-list li");
+  if (!q) return;
+  q.addEventListener("input", function () {{
+    var words = q.value.toLowerCase().split(/\\s+/).filter(Boolean);
+    items.forEach(function (li) {{
+      var text = li.getAttribute("data-text");
+      li.hidden = !words.every(function (w) {{ return text.indexOf(w) !== -1; }});
+    }});
+  }});
+}})();
+</script>"""
+        self.write_page("studies/", "Studies", body, "Studies registered in the STEMEd+ Library, linked to the theories, constructs, and instruments they use.")
 
     # ---------- reference
     def reference_page(self) -> None:
@@ -1184,6 +1286,7 @@ class Site:
         for name in ("frameworks.json", "constructs.json", "scales.json", "standard_variables.json"):
             shutil.copyfile(self.lib.root / name, data / name)
         (data / "datasets.json").write_text(json.dumps(self.dataset_index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        (data / "studies.json").write_text(json.dumps(self.study_index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         self.write_archive(data)
 
         def write_csv(name, header, rows):
@@ -1278,6 +1381,9 @@ class Site:
         for ds in self.datasets:
             self.dataset_page(ds)
         self.datasets_page()
+        for st in self.studies:
+            self.study_page(st)
+        self.studies_page()
         self.compare_page()
         self.recommend_page()
         self.reference_page()
@@ -1306,9 +1412,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--library", type=Path, default=REPO, help="library folder (default: this repository)")
     ap.add_argument("--datasets", type=Path, default=REPO / "_datasets.json",
                     help="dataset index from scripts/fetch_datasets.py (default: _datasets.json, if present)")
+    ap.add_argument("--studies", type=Path, default=REPO / "_studies.json",
+                    help="study index from scripts/fetch_datasets.py --kind studies (default: _studies.json, if present)")
     args = ap.parse_args(argv)
     datasets = json.loads(args.datasets.read_text(encoding="utf-8")) if args.datasets.is_file() else None
-    site = Site(Library.load(args.library), args.out, humeta_labels(), datasets)
+    studies = json.loads(args.studies.read_text(encoding="utf-8")) if args.studies.is_file() else None
+    site = Site(Library.load(args.library), args.out, humeta_labels(), datasets, studies)
     site.build()
     print(f"Built {len(site.pages)} pages in {args.out}")
     return 0

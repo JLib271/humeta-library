@@ -1,0 +1,58 @@
+{
+ "format": "humeta-study-index",
+ "collection": "stemedplus-studies",
+ "fetched": "2026-11-16",
+ "studies": [
+  {
+   "id": "sssss-00001",
+   "doi": "10.17613/sssss-00001",
+   "url": "https://doi.org/10.17613/sssss-00001",
+   "title": "Learning geology concepts in active-learning introductory courses",
+   "creators": [
+    "Researcher, A."
+   ],
+   "date": "2026-08-01",
+   "resource_type": "Other",
+   "description": "Study design: pre/post GCI in two sections.",
+   "licenses": [
+    "Creative Commons Attribution 4.0"
+   ],
+   "files_public": true,
+   "has_humeta": true,
+   "instruments": [
+    "gci"
+   ],
+   "versions": [
+    "gci-v4-2014"
+   ],
+   "constructs": [
+    "conceptual_understanding"
+   ],
+   "frameworks": [
+    "evt"
+   ],
+   "disciplines": [
+    "anzsrc_3702"
+   ],
+   "fields": [
+    "education"
+   ],
+   "education_levels": [
+    "bachelors"
+   ],
+   "participant_roles": [
+    "students"
+   ],
+   "study_designs": [
+    "pre_post"
+   ],
+   "sample_size": 200,
+   "topic": "Geology concepts",
+   "keywords": [
+    "geoscience"
+   ],
+   "related": [],
+   "profile_doi": ""
+  }
+ ]
+}

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Read the STEMEd+ Library's Data collection into datasets.json, the index the HuMeta Library links.
+"""Read the STEMEd+ Library's Data or Studies collection into an index the HuMeta Library links.
 
 Datasets live in the STEMEd+ Library on Knowledge Commons (KCWorks), in the Data
-subcollection. This reads that collection's public records and, for each, works out
-what it connects to in the HuMeta Library:
+subcollection; registered studies (a study's design, deposited from the HuMeta Portal's
+Module 3 to give the study its own DOI) live in the Studies subcollection. This reads a
+collection's public records and, for each, works out what it connects to in the HuMeta
+Library:
 
 * **humeta.json**: the HuMeta study profile attached to the deposit (downloaded from
   the HuMeta Portal). It gives the instruments and versions used, constructs measured,
@@ -20,6 +22,7 @@ Knowledge Commons can't be reached, the index published with the current website
 is reused, so a failed fetch never empties the site's dataset pages.
 
     python scripts/fetch_datasets.py                    # writes _datasets.json
+    python scripts/fetch_datasets.py --kind studies     # writes _studies.json
     python scripts/fetch_datasets.py --out PATH --collection stemedplus-data
 """
 from __future__ import annotations
@@ -39,8 +42,17 @@ import kcworks_lookup as K  # noqa: E402
 REPO = Path(__file__).resolve().parent.parent
 #: The STEMEd+ Library's Data subcollection (KCWorks community slug)
 DATA_COLLECTION = "stemedplus-data"
-#: The index the current website publishes, reused when Knowledge Commons can't be reached
+#: The STEMEd+ Library's Studies subcollection: registered studies, each with its own DOI
+STUDIES_COLLECTION = "stemedplus-studies"
+#: The indexes the current website publishes, reused when Knowledge Commons can't be reached
 PUBLISHED_INDEX = "https://jlib271.github.io/humeta-library/data/datasets.json"
+PUBLISHED_STUDY_INDEX = "https://jlib271.github.io/humeta-library/data/studies.json"
+#: kind -> (default collection, index format, published index)
+KINDS = {
+    "datasets": (DATA_COLLECTION, "humeta-dataset-index", PUBLISHED_INDEX),
+    "studies": (STUDIES_COLLECTION, "humeta-study-index", PUBLISHED_STUDY_INDEX),
+}
+DOI = re.compile(r"10\.\d{4,9}/\S+")
 HUMETA_FILE = re.compile(r"(^|[._-])humeta\.json$", re.I)
 KEYWORD = re.compile(r"^\s*humeta:(instrument|version|construct|framework)\s*:\s*([A-Za-z0-9_.-]+)\s*$", re.I)
 PAGE_SIZE = 100
@@ -92,7 +104,15 @@ def humeta_links(record: dict) -> dict:
         "study_designs": list(evidence.get("study_designs") or []),
         "sample_size": population.get("sample_size"),
         "topic": (study.get("design") or {}).get("topic"),
+        "profile_doi": _profile_doi(record),
     }
+
+
+def _profile_doi(record: dict) -> str | None:
+    """The study DOI a HuMeta profile records (set when the study was registered), lower-cased."""
+    ident = (record.get("resource") or {}).get("identifier") or {}
+    m = DOI.search(str(ident.get("value") or "")) if ident.get("type") == "DOI" else None
+    return m.group(0).rstrip(".").lower() if m else None
 
 
 def _unique(values) -> list:
@@ -149,6 +169,9 @@ def entry(record: dict, fetch) -> dict:
         "topic": links.get("topic") or "",
         "keywords": [k for k in keywords if not KEYWORD.match(k)],
         "related": _unique((r.get("identifier") or "") for r in md.get("related_identifiers") or []),
+        # The study this deposit belongs to: the DOI in its humeta.json (a dataset deposited after the study was
+        # registered). For a deposit in the Studies collection that is normally empty: its own DOI is the study's.
+        "profile_doi": links.get("profile_doi") or "",
     }
 
 
@@ -164,34 +187,40 @@ def fetch_collection(slug: str = DATA_COLLECTION, fetch=K.get_json) -> list[dict
     return [entry(r, fetch) for r in records if (r.get("access") or {}).get("record", "public") == "public"]
 
 
-def build_index(slug: str = DATA_COLLECTION, fetch=K.get_json) -> dict:
-    """The index, from Knowledge Commons or, failing that, from the current website."""
+def build_index(slug: str | None = None, fetch=K.get_json, kind: str = "datasets") -> dict:
+    """The index of a collection (``kind`` "datasets" or "studies"), from Knowledge Commons or, failing that,
+    from the current website. Entries are under the ``kind`` key."""
+    default_slug, fmt, published = KINDS[kind]
+    slug = slug or default_slug
     try:
-        datasets = fetch_collection(slug, fetch)
-        return {"format": "humeta-dataset-index", "collection": slug, "collection_url": collection_url(slug),
-                "fetched": date.today().isoformat(), "datasets": datasets}
+        entries = fetch_collection(slug, fetch)
+        return {"format": fmt, "collection": slug, "collection_url": collection_url(slug),
+                "fetched": date.today().isoformat(), kind: entries}
     except Exception as exc:  # noqa: BLE001
         print(f"Could not read the {slug} collection: {exc}", file=sys.stderr)
     try:
-        previous = fetch(PUBLISHED_INDEX)
-        if previous.get("format") == "humeta-dataset-index":
-            print("Reusing the dataset index published with the current website.", file=sys.stderr)
+        previous = fetch(published)
+        if previous.get("format") == fmt:
+            print(f"Reusing the {kind} index published with the current website.", file=sys.stderr)
             return previous
     except Exception as exc:  # noqa: BLE001
-        print(f"Could not read the published dataset index either: {exc}", file=sys.stderr)
-    return {"format": "humeta-dataset-index", "collection": slug, "collection_url": collection_url(slug),
-            "fetched": None, "datasets": []}
+        print(f"Could not read the published {kind} index either: {exc}", file=sys.stderr)
+    return {"format": fmt, "collection": slug, "collection_url": collection_url(slug), "fetched": None, kind: []}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--out", type=Path, default=REPO / "_datasets.json")
-    ap.add_argument("--collection", default=DATA_COLLECTION, help="KCWorks collection slug")
+    ap.add_argument("--kind", choices=list(KINDS), default="datasets",
+                    help="datasets (the Data collection) or studies (the Studies collection)")
+    ap.add_argument("--out", type=Path, help="default: _datasets.json or _studies.json")
+    ap.add_argument("--collection", help="KCWorks collection slug (default: the kind's collection)")
     args = ap.parse_args(argv)
-    index = build_index(args.collection)
-    args.out.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    linked = sum(1 for d in index["datasets"] if d["instruments"] or d["constructs"] or d["frameworks"])
-    print(f"{len(index['datasets'])} datasets ({linked} linked to the library) written to {args.out}")
+    out = args.out or REPO / f"_{args.kind}.json"
+    index = build_index(args.collection, kind=args.kind)
+    out.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    entries = index[args.kind]
+    linked = sum(1 for d in entries if d["instruments"] or d["constructs"] or d["frameworks"])
+    print(f"{len(entries)} {args.kind} ({linked} linked to the library) written to {out}")
     return 0
 
 
