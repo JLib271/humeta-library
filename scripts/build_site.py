@@ -826,6 +826,24 @@ class Site:
         self.write_page(self.url("frameworks", fid), fw["label"], "\n".join(parts), fw.get("description", ""))
 
     # ---------- constructs
+    @staticmethod
+    def naming_text(c: dict) -> str:
+        """Where the construct's name comes from: ERIC, ICPSR, or its first published use (HTML)."""
+        n = c["naming"]
+        status = {"needs_check": " (proposed; to be confirmed by the governance committee)",
+                  "verified": "", "unresolved": ""}[n["status"]]
+        if n["authority"] == "eric":
+            text = "ERIC Thesaurus descriptor " + ext(n["url"], n["term"])
+        elif n["authority"] == "icpsr":
+            text = "ICPSR Subject Thesaurus term " + ext(n["url"], n["term"])
+        elif n["status"] == "unresolved":
+            text = "Provisional: no ERIC or ICPSR term means exactly this, and its first published use is not yet identified"
+        else:
+            source = h(n["citation"]) + (" " + ext(n["url"], "Link") if n.get("url") else "")
+            text = f"First published use ({n['year']}): {source}"
+        note = f'<br><span class="note">{h(n["note"])}</span>' if n.get("note") else ""
+        return text + h(status) + note
+
     def construct_page(self, c: dict) -> None:
         root = "../../"
         cid = c["id"]
@@ -833,7 +851,7 @@ class Site:
                  f'<h1>{h(c["label"])}</h1>',
                  f'<div class="tags"><span class="tag k">{h(label(c.get("domain")))}</span></div>',
                  f'<p class="lead">{h(c.get("definition"))}</p>']
-        facts = []
+        facts = [("Official name", self.naming_text(c))] if c.get("naming") else []
         if c.get("synonyms"):
             facts.append(("Also called", ", ".join(c["synonyms"])))
         if c.get("broader"):
@@ -842,7 +860,7 @@ class Site:
         if c.get("eric"):
             facts.append(("ERIC descriptors", ", ".join(c["eric"])))
         if facts:
-            parts.append(self.facts(facts, raw_keys={"Broader"}))
+            parts.append(self.facts(facts, raw_keys={"Broader", "Official name"}))
         insts = self.construct_instruments(cid)
         parts.append('<h2 id="instruments">Instruments</h2>')
         if insts:

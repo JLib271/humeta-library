@@ -58,6 +58,12 @@ def main(library: Path, vocabularies: str | None = None) -> int:
             problems.append(f"constructs.json: duplicate id {c['id']}")
         construct_ids.add(c["id"])
     for c in constructs_doc.get("constructs", []):
+        naming = c.get("naming") or {}
+        if naming.get("term") and naming.get("status") != "unresolved" and c["label"] != naming["term"]:
+            problems.append(f"constructs.json: {c['id']} label '{c['label']}' must equal its official name '{naming['term']}'")
+        if naming.get("doi") and naming.get("url") and naming["doi"] not in naming["url"]:
+            problems.append(f"constructs.json: {c['id']} naming url should be the DOI link https://doi.org/{naming['doi']}")
+    for c in constructs_doc.get("constructs", []):
         if c.get("broader") and c["broader"] not in construct_ids:
             problems.append(f"constructs.json: {c['id']} has unknown broader '{c['broader']}'")
 
