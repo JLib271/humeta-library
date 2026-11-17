@@ -1100,8 +1100,11 @@ class Site:
                      ("Valid range", f'{v["valid_range"]["min"]}–{v["valid_range"]["max"]}' if v.get("valid_range") else ""),
                      ("Sensitivity", label(v.get("sensitivity"))),
                      ("Source", (h(v.get("source")) + (" " + ext(v["source_url"], "Link") if v.get("source_url") else ""))
-                      if v.get("source") else ""), ("Notes", v.get("notes"))]
-            parts.append(self.facts(facts, raw_keys={"Source"}))
+                      if v.get("source") else ""),
+                     ("ICPSR term", ext(v["icpsr_term"]["url"], v["icpsr_term"]["term"]) if v.get("icpsr_term") else ""),
+                     ("Code list", ext(v["code_list"]["url"], v["code_list"]["name"]) if v.get("code_list") else ""),
+                     ("Notes", v.get("notes"))]
+            parts.append(self.facts(facts, raw_keys={"Source", "ICPSR term", "Code list"}))
             if v.get("options"):
                 parts.append(self.table(["Code", "Label", "Column suffix"],
                                         [[h(o.get("code")), h(o.get("label")), f'<code>{h(o["suffix"])}</code>' if o.get("suffix") else ""]
