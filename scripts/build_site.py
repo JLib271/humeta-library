@@ -268,8 +268,7 @@ class Site:
 <li>{ext("https://jlib271.github.io/stemed-funding/", "STEMEd+ Funding")}: open calls and deadlines for STEM+ education</li>
 <li>{ext("https://jlib271.github.io/stem-ed-research-programs/", "STEM+ Education Research Graduate Programs")}: where to study STEM+ education research</li>
 <li>{ext("https://jlib271.github.io/stemed-jobs/", "STEMEd+ Jobs")}: positions in STEM+ education</li>
-<li>{ext("https://jlib271.github.io/stemed-professional-learning/", "STEMEd+ Professional Learning")}: national programs for K-12 teachers and informal educators</li>
-<li>{ext("https://jlib271.github.io/stemed-faculty-development/", "STEMEd+ Faculty Development")}: teaching professional development for college faculty, instructors, graduate students, and postdocs</li>
+<li>{ext("https://jlib271.github.io/stemed-professional-development/", "STEMEd+ Professional Development")}: national programs for K-12 teachers, informal educators, college faculty and instructors, and graduate students and postdocs</li>
 </ul>
 </div></footer>
 <script src="{root}assets/site.js"></script>
