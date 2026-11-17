@@ -207,6 +207,15 @@ and `consent_share`. Each has a `sensitivity` rating (`direct_identifier`,
 `quasi_identifier`, `sensitive`, `none`) used to flag variables that need
 review before data are shared.
 
+Some standard variables are **linked entries** (`gender_identity`, `first_gen`,
+`class_standing`, `major_cip`): the library fixes the name, label and
+sensitivity so studies match, but does not set question wording or codes.
+Instead each points to ICPSR's metadata, with an `icpsr_term` from the [ICPSR
+Subject Thesaurus](https://www.icpsr.umich.edu/web/ICPSR/thesaurus/10001) and
+ICPSR's [variables database](https://www.icpsr.umich.edu/web/ICPSR/search/variables)
+for wording other studies have used, and, where values come from an external
+code list, a `code_list` (CIP 2020 codes for `major_cip`).
+
 **Variable names** are generated, not typed, using the rules in
 The portal's [`oem/naming.py`](https://github.com/JLib271/HuMeta/blob/main/oem/naming.py): `<instrument prefix>_<item_id>` (e.g. `gci_q05`), one 0/1
 variable per option for select-all items (`gci_q01_c`), fixed names for
