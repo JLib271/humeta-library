@@ -200,6 +200,25 @@ codes (-99 = no response, -98 = not administered). Items and variables point
 to a `scale_id` instead of restating labels, so every study codes the same
 scale the same way.
 
+**Naming shared constructs.** There is no metadata norm for naming
+constructs, so each construct's official name (`label`) follows a fixed order,
+recorded in its `naming` field:
+
+1. an [ERIC Thesaurus](https://eric.ed.gov/?ti=all) descriptor with exactly the
+   same meaning, used exactly as ERIC writes it (for example `Self Efficacy`);
+2. otherwise, an [ICPSR Subject Thesaurus](https://www.icpsr.umich.edu/web/ICPSR/thesaurus/10001)
+   term with exactly the same meaning;
+3. otherwise, the name under which the construct was **first published**, with
+   that source (citation and DOI) as its anchor, as in biological nomenclature:
+   the first published name has priority, and the original definition fixes what
+   the name means.
+
+Other names, including earlier labels in this library, are kept as `synonyms`
+so searches still find them. `naming.status` is `needs_check` until the
+governance committee confirms the name, and `unresolved` when no authority term
+or first use has been agreed (the label is then provisional). A construct's
+`id` never changes, whatever its name.
+
 **Standard variables** (`standard_variables.json`) are demographic and context
 variables with fixed names, wording and codes, for example `participant_id`,
 `age_years`, `race_eth` (the 2024 federal combined race/ethnicity question)
