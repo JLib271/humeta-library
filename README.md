@@ -281,6 +281,29 @@ name. Studies are matched by identifiers: the library record's persistent
 identifier below, or the DOI of a published instrument that is not in the
 library.
 
+### Items across versions
+
+Each version's item file is also a crosswalk. An item that is unchanged keeps
+its `item_id` in every version, whatever its number there. A changed item
+gets a new `item_id` and a `derived_from` link (one, or a list for a split or
+merged item) to the item it came from, saying how it changed (`reworded`,
+`domain_word_swapped`, `options_changed`, `translated`, `split`, `merged`).
+Each link has a `status`:
+
+- `possible`: proposed, not yet checked (for example from item order or
+  similar wording);
+- `confirmed`: checked, with a `basis` (`developer_documentation`,
+  `item_text_comparison`, `response_data`, `expert_review`, `other`) and
+  optionally `checked_by` and `checked_on`.
+
+The validator checks that every link points to an item in some version of the
+same instrument and that confirmed links give a basis. Each instrument page
+shows the crosswalk, with possible and confirmed links in separate columns. In
+codebooks, each item-level variable carries the item's persistent identifier
+(`item_uri`, the same in every version) and its links (`linked_items`), so
+studies that used different versions can be matched item by item while their
+metadata codes still say which version was used.
+
 ## Persistent identifiers
 
 Every library record has a persistent identifier on
@@ -292,6 +315,7 @@ identifiers stay the same if this website moves; only the redirect
 |---|---|
 | Instrument | `https://w3id.org/humeta/instrument/gci` |
 | One version of it | `https://w3id.org/humeta/instrument/gci/gci-v4-2014` |
+| One item (the same in every version that has it) | `https://w3id.org/humeta/instrument/gci/item/q05` |
 | Its record as JSON | `https://w3id.org/humeta/instrument/gci.json` |
 | Shared construct | `https://w3id.org/humeta/construct/self-efficacy` |
 | Theory or framework | `https://w3id.org/humeta/framework/sct` |

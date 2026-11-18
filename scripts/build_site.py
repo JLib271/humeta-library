@@ -32,6 +32,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tarfile
@@ -203,6 +204,12 @@ def status_tag(status: str | None) -> str:
 
 
 # ---------------------------------------------------------------- site
+
+
+def item_links(item: dict) -> list[dict]:
+    """An item's links to items in other versions (``derived_from``: one object or a list)."""
+    links = item.get("derived_from") or []
+    return [links] if isinstance(links, dict) else list(links)
 
 def with_identifier(ld: dict, uri: str) -> dict:
     """schema.org description with the record's persistent identifier as its @id and first identifier."""
@@ -503,6 +510,7 @@ class Site:
             for vid, rec in sorted(files):
                 vlabel = next((v.get("label", vid) for v in versions if v["version_id"] == vid), vid)
                 parts.append(self.items_block(inst, vid, vlabel, rec, text_ok, key_ok))
+            parts.append(self.crosswalk(inst, files, versions))
 
         parts.append(self.studies_section(self.studies_with("instruments", iid), root, "this instrument"))
         parts.append(self.datasets_section(self.datasets_with("instruments", iid), root, "this instrument"))
@@ -594,10 +602,52 @@ class Site:
 
     @staticmethod
     def derived(item: dict) -> str:
-        d = item.get("derived_from")
-        if not d:
-            return ""
-        return f"From {d['item_id']} ({d['relation'].replace('_', ' ')})" + (f": {d['notes']}" if d.get("notes") else "")
+        return "; ".join(
+            f"From {d['item_id']} ({d['relation'].replace('_', ' ')}, {d.get('status', 'confirmed')}"
+            + (f": {label(d['basis'])}" if d.get("basis") else "") + ")" + (f": {d['notes']}" if d.get("notes") else "")
+            for d in item_links(item))
+
+    def crosswalk(self, inst: dict, files: list, versions: list) -> str:
+        """Item crosswalk: each item (stable item_id and persistent identifier) with its number in every
+        version, and its links to items in other versions, possible and confirmed shown apart."""
+        iid = inst["id"]
+        order = [v["version_id"] for v in versions if any(vid == v["version_id"] for vid, _ in files)]
+        order += sorted(vid for vid, _ in files if vid not in order)
+        vlabel = {v["version_id"]: v.get("label", v["version_id"]) for v in versions}
+        numbers: dict[str, dict[str, str]] = {}
+        links: dict[str, list[dict]] = {}
+        for vid, rec in files:
+            for item in rec.get("items", []):
+                numbers.setdefault(item["item_id"], {})[vid] = str(item.get("number", ""))
+                for link in item_links(item):
+                    links.setdefault(item["item_id"], []).append(link)
+                    links.setdefault(link["item_id"], []).append({**link, "item_id": item["item_id"], "_inverse": True})
+
+        def link_text(item_id: str, status: str) -> str:
+            out = []
+            for k in links.get(item_id, []):
+                if k.get("status", "confirmed") != status:
+                    continue
+                rel = k["relation"].replace("_", " ")
+                out.append(f'<a href="#item-{h(k["item_id"])}"><code>{h(k["item_id"])}</code></a> '
+                           f'({h(("source of: " if k.get("_inverse") else "") + rel)}'
+                           + (f"; {h(label(k['basis']))}" if k.get("basis") else "") + ")")
+            return "; ".join(out)
+
+        rows = [[f'<span id="item-{h(item_id)}"></span><code>{h(item_id)}</code>',
+                 *[h(numbers[item_id].get(vid, "")) for vid in order],
+                 link_text(item_id, "confirmed"), link_text(item_id, "possible")]
+                for item_id in sorted(numbers, key=lambda x: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", x)])]
+        n_possible = sum(1 for ks in links.values() for k in ks if k.get("status") == "possible" and not k.get("_inverse"))
+        return ('<h3 id="crosswalk">Item crosswalk</h3>'
+                '<p class="note">Each item keeps its ID in every version that includes it unchanged; its persistent identifier '
+                f'is <code>{h(persistent_uri("instrument", iid))}/item/&lt;item ID&gt;</code>. A changed item gets a new ID and a '
+                'link to the item it came from. <strong>Possible</strong> links are proposed and not yet checked; '
+                '<strong>confirmed</strong> links give their basis.'
+                + (f" {n_possible} possible link(s) await checking." if n_possible else "") + "</p>"
+                + f'<details><summary>Show the crosswalk ({len(rows)} items, {len(order)} version(s))</summary>'
+                + self.table(["Item ID", *[f"No. in {vlabel.get(vid, vid)}" for vid in order], "Confirmed links",
+                              "Possible links"], rows) + "</details>")
 
     def copy_figure(self, iid: str, src_dir: Path, rel: str) -> str | None:
         """Copy an item image (only for instruments whose item text is shareable); return its URL from the page."""

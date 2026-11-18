@@ -41,6 +41,12 @@ def schema_errors(validator: Draft202012Validator, data, label: str) -> list[str
     ]
 
 
+
+def item_links(item: dict) -> list[dict]:
+    """An item's links to items in other versions (``derived_from``: one object or a list)."""
+    links = item.get("derived_from") or []
+    return [links] if isinstance(links, dict) else list(links)
+
 def main(library: Path, vocabularies: str | None = None) -> int:
     problems: list[str] = []
     schemas = library / "schema"
@@ -279,8 +285,12 @@ def main(library: Path, vocabularies: str | None = None) -> int:
                         problems.append(f"{where}: unknown construct '{cid}'")
                 for req in item.get("requires_item_ids", []):
                     derived_refs.append((iid, req, where))
-                if item.get("derived_from"):
-                    derived_refs.append((iid, item["derived_from"]["item_id"], where))
+                for link in item_links(item):
+                    derived_refs.append((iid, link["item_id"], where))
+                    if link["item_id"] == item.get("item_id"):
+                        problems.append(f"{where}: an item cannot link to itself (an unchanged item keeps its item_id)")
+                    if link.get("status") == "confirmed" and not link.get("basis"):
+                        problems.append(f"{where}: confirmed link to '{link['item_id']}' needs a basis")
             item_ids_by_instrument.setdefault(iid, set()).update(seen)
         for iid, ref, where in derived_refs:
             if ref not in item_ids_by_instrument.get(iid, set()):

@@ -240,3 +240,21 @@ def test_records_carry_persistent_identifiers(site):
     rules = (ROOT / "w3id" / "ids" / "humeta" / ".htaccess").read_text(encoding="utf-8")
     for kind in ("instrument", "construct", "framework", "metadata-code"):
         assert f"^{kind}" in rules
+
+
+def test_item_crosswalk_shows_possible_and_confirmed_links():
+    import types
+    inst = {"id": "demo"}
+    versions = [{"version_id": "v1", "label": "First"}, {"version_id": "v2", "label": "Second"}]
+    files = [("v1", {"items": [{"item_id": "q01", "number": "1"}, {"item_id": "q02", "number": "2"}]}),
+             ("v2", {"items": [{"item_id": "q01", "number": "3"},
+                               {"item_id": "q10", "number": "1", "derived_from": [
+                                   {"item_id": "q02", "relation": "reworded", "status": "possible"}]},
+                               {"item_id": "q11", "number": "2", "derived_from": {
+                                   "item_id": "q02", "relation": "split", "status": "confirmed",
+                                   "basis": "developer_documentation"}}]})]
+    html = B.Site.crosswalk(types.SimpleNamespace(table=B.Site.table), inst, files, versions)
+    assert "No. in First" in html and "No. in Second" in html and 'id="item-q10"' in html
+    assert "Possible links" in html and "Confirmed links" in html and "1 possible link(s) await checking" in html
+    assert "source of: split" in html  # q02 shows the confirmed link from q11
+    assert "https://w3id.org/humeta/instrument/demo/item/" in html
