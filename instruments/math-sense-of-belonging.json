@@ -53,6 +53,7 @@
   "versions": [
     {
       "version_id": "good-2012-en",
+      "code": "V1",
       "label": "Original (Good, Rattan & Dweck, 2012)",
       "language": "en",
       "discipline_adaptation": "mathematics",

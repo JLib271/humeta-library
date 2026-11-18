@@ -71,6 +71,7 @@
   "versions": [
     {
       "version_id": "ccci-2018",
+      "code": "V1",
       "label": "21-item version (2018)",
       "language": "en",
       "year": 2018,

@@ -60,6 +60,7 @@
   "versions": [
     {
       "version_id": "gci-v4-2014",
+      "code": "V4",
       "label": "GCI v.4 (2014 item set)",
       "language": "en",
       "year": 2014,

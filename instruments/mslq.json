@@ -83,6 +83,7 @@
   "versions": [
     {
       "version_id": "mslq-1991-en",
+      "code": "V1",
       "label": "Original English (manual, 1991)",
       "language": "en",
       "year": 1991,

@@ -224,3 +224,19 @@ def test_no_studies_still_builds_the_studies_page(tmp_path):
     B.main(["--out", str(out), "--datasets", str(tmp_path / "missing.json"), "--studies", str(tmp_path / "missing.json")])
     assert "No studies have been registered" in (out / "studies" / "index.html").read_text(encoding="utf-8")
     assert json.loads((out / "data" / "studies.json").read_text(encoding="utf-8"))["studies"] == []
+
+
+def test_records_carry_persistent_identifiers(site):
+    page = (site / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    assert "https://w3id.org/humeta/instrument/gci" in page and "Libarkin2005V4" in page
+    assert "https://w3id.org/humeta/instrument/gci/gci-v4-2014" in page
+    ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', page, re.S).group(1).replace("<\\/", "</"))
+    assert ld["@id"] == "https://w3id.org/humeta/instrument/gci"
+    dc = json.loads((site / "data" / "datacite" / "gci.json").read_text(encoding="utf-8"))
+    assert dc["alternateIdentifiers"][0] == {"alternateIdentifier": "https://w3id.org/humeta/instrument/gci",
+                                             "alternateIdentifierType": "URL"}
+    assert "https://w3id.org/humeta/construct/self-efficacy" in (
+        site / "constructs" / "self-efficacy" / "index.html").read_text(encoding="utf-8")
+    rules = (ROOT / "w3id" / "ids" / "humeta" / ".htaccess").read_text(encoding="utf-8")
+    for kind in ("instrument", "construct", "framework", "metadata-code"):
+        assert f"^{kind}" in rules

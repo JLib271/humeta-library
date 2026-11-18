@@ -244,13 +244,8 @@ standard variables, and `_pre` / `_post` / `_t1` … suffixes for repeated
 measures. Each instrument's `variable_prefix` must be unique and never change
 once data exist.
 
-**Metadata codes.** Each instrument has a fixed `metadata_code`, the first
-author's surname and year of the original publication (`Pintrich1991`), with a
-letter added if two instruments would clash (`Smith2013a`). The portal builds
-HuMeta metadata codes as Construct_Measure_Item_Target
-(`self_efficacy_SCT_Pintrich1991_item5_...`) so studies using the same
-construct, instrument, item or target can be found. The code never changes once
-published, even if the citation is corrected.
+**Metadata codes.** Each instrument has a fixed `metadata_code` and each of its
+versions a fixed `code`; see [Metadata codes](#metadata-codes).
 
 **Identifiers elsewhere.** HuMeta links to existing instrument records rather
 than duplicating them. `identifiers` lists them in this order of preference:
@@ -259,6 +254,53 @@ Test Archive (ZPID) or FDZ Bildung (DIPF); a LOINC code for health
 instruments. Catalog pages without persistent identifiers (PhysPort, CHIRAL,
 AIR's edinstruments.org) and ERIC numbers are listed too. `status` stays
 `needs_check` until a reviewer has searched PsycTests (subscription) and ZIS.
+
+## Metadata codes
+
+HuMeta metadata codes let studies be matched at four levels: the same
+construct, the same measure, the same item, or the same target. The HuMeta
+Portal gives every variable in a codebook a code built from these parts,
+joined by underscores:
+
+| Level | Part | Example |
+|---|---|---|
+| Construct | A theory's construct plus the theory's abbreviation; else the shared construct's id; else the study's own name for it | `outcome_expectations_SCT` |
+| Construct_Measure | + the measure: a library instrument's `metadata_code` and version `code`; for a published instrument not in the library, its first author and year; `Own` for researcher-written questions; `Codes` for codes in a coding scheme | `outcome_expectations_SCT_Smith2017V1` |
+| Construct_Measure_Item | + the item number and, where the item text may be shown, its first four words | `..._Smith2017V1_item1_PeopleExpectMeTo` |
+| Construct_Measure_Item_Target | + what the measure is about, when the researcher names it | `..._item1_PeopleExpectMeTo_Vote` |
+
+The measure part names the publication and the version: an instrument's
+`metadata_code` is the first author's surname and year of its original
+publication (`Pintrich1991`, with a letter if two would clash, `Smith2013a`),
+and each version adds its `code` (`V1`, `V4`, `PhysV3`), because item numbers
+differ between versions (`Libarkin2005V4_item12`). Both are fixed once
+published, even if a citation is corrected.
+
+The code is a readable label, kept beside each variable's short data column
+name. Studies are matched by identifiers: the library record's persistent
+identifier below, or the DOI of a published instrument that is not in the
+library.
+
+## Persistent identifiers
+
+Every library record has a persistent identifier on
+[w3id.org](https://w3id.org/), which redirects to its page here. The
+identifiers stay the same if this website moves; only the redirect
+([`w3id/ids/humeta/.htaccess`](w3id/ids/humeta/.htaccess)) changes.
+
+| Record | Identifier |
+|---|---|
+| Instrument | `https://w3id.org/humeta/instrument/gci` |
+| One version of it | `https://w3id.org/humeta/instrument/gci/gci-v4-2014` |
+| Its record as JSON | `https://w3id.org/humeta/instrument/gci.json` |
+| Shared construct | `https://w3id.org/humeta/construct/self-efficacy` |
+| Theory or framework | `https://w3id.org/humeta/framework/sct` |
+| Metadata-code scheme | `https://w3id.org/humeta/metadata-code` |
+
+Ids are the records' ids with `_` written as `-`. The instrument pages, their
+schema.org description (`@id`) and their DataCite metadata
+(`alternateIdentifiers`) carry the identifier; codebooks and DDI files from
+the HuMeta Portal use it to name instruments and constructs.
 
 ## Review status
 
