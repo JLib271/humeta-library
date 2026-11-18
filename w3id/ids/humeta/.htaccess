@@ -10,6 +10,7 @@
 # Identifiers:
 #   https://w3id.org/humeta/instrument/<id>              an instrument
 #   https://w3id.org/humeta/instrument/<id>/<version>    one version of it
+#   https://w3id.org/humeta/instrument/<id>/item/<item>  one item, the same in every version that has it
 #   https://w3id.org/humeta/instrument/<id>.json         its library record (JSON)
 #   https://w3id.org/humeta/construct/<id>               a shared construct
 #   https://w3id.org/humeta/<instrument|construct|framework>   the list of them (vocabulary scheme)
@@ -21,6 +22,7 @@ Options +FollowSymLinks
 RewriteEngine on
 
 RewriteRule ^instrument/([a-z0-9-]+)\.json$ https://jlib271.github.io/humeta-library/data/instruments/$1.json [R=302,L]
+RewriteRule ^instrument/([a-z0-9-]+)/item/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#item-$2 [R=302,NE,L]
 RewriteRule ^instrument/([a-z0-9-]+)/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#versions [R=302,NE,L]
 RewriteRule ^instrument/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/ [R=302,L]
 RewriteRule ^construct/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/constructs/$1/ [R=302,L]

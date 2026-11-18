@@ -67,3 +67,32 @@ def test_psyctests_ids_must_be_dois(tmp_path):
                                           "url": "https://doi.org/10.1037/t22083-000"})
     path.write_text(json.dumps(rec), encoding="utf-8")
     assert validate_library.main(root, _vocabularies()) == 1
+
+
+def _second_version(root, links) -> None:
+    """A made-up second GCI version in a copy of the library: its first item links to v4 items."""
+    path = root / "instruments" / "gci.json"
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    rec["versions"].append({**rec["versions"][0], "version_id": "gci-test-v5", "code": "V5", "label": "Test version"})
+    path.write_text(json.dumps(rec), encoding="utf-8")
+    items = [{"item_id": "q90", "number": "1", "response_type": "single_response", "derived_from": links},
+             {"item_id": "q01", "number": "2", "response_type": "multiple_response"}]
+    (root / "items" / "gci" / "gci-test-v5.json").write_text(
+        json.dumps({"instrument_id": "gci", "version_id": "gci-test-v5", "items": items}), encoding="utf-8")
+
+
+def test_items_can_link_across_versions_as_possible_or_confirmed(tmp_path, capsys):
+    root = _copy(tmp_path)
+    _second_version(root, [{"item_id": "q05", "relation": "reworded", "status": "possible"},
+                           {"item_id": "q06", "relation": "merged", "status": "confirmed",
+                            "basis": "developer_documentation", "checked_by": "Test", "checked_on": "2026-11-18"}])
+    assert validate_library.main(root, _vocabularies()) == 0
+
+
+def test_confirmed_links_need_a_basis_and_a_real_item(tmp_path, capsys):
+    root = _copy(tmp_path)
+    _second_version(root, [{"item_id": "q05", "relation": "reworded", "status": "confirmed"},
+                           {"item_id": "q999", "relation": "reworded", "status": "possible"}])
+    assert validate_library.main(root, _vocabularies()) == 1
+    out = capsys.readouterr().out
+    assert "needs a basis" in out and "'q999' not found" in out
