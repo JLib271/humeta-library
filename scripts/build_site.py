@@ -75,7 +75,7 @@ KC_JOIN_URL = "https://support.hcommons.org/profiles/login-and-registration/"
 CONTRIBUTE_URL = f"{REPO_URL}/blob/main/CONTRIBUTING.md"
 RECOMMEND_URL = f"{REPO_URL}/issues/new?template=instrument_submission.yml"
 SIGNUP_URL = "https://github.com/signup"
-#: Datasets: the STEMEd+ Library's Data subcollection on Knowledge Commons (see scripts/fetch_datasets.py)
+#: Datasets: the STEMEd+ Commons Library's Data subcollection (see scripts/fetch_datasets.py)
 DATA_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus-data"
 DATA_DEPOSIT_URL = "https://works.hcommons.org/uploads/new?community=stemedplus-data"
 #: Registered studies: the STEMEd+ Library's Studies subcollection (fetch_datasets.py --kind studies)
@@ -491,6 +491,20 @@ class Site:
         if oc.get("text"):
             parts.append(f'<p><strong>Original citation:</strong> {h(oc["text"])}{doi_link(oc.get("doi"))}'
                          + (f' {ext(oc["url"], "Link")}' if oc.get("url") else "") + "</p>")
+        if inst.get("metadata_code"):
+            parts.append(f'<p><strong>HuMeta metadata code:</strong> <code>{h(inst["metadata_code"])}</code> '
+                         '<span class="note">(the measure part of Construct_Measure_Item_Target codes; never changes)</span></p>')
+        idents = inst.get("identifiers") or {}
+        if idents:
+            names = {"psyctests": "APA PsycTests", "zis": "ZIS (GESIS)", "open_test_archive": "Open Test Archive (ZPID)",
+                     "fdz_bildung": "FDZ Bildung (DIPF)", "loinc": "LOINC", "eric": "ERIC", "physport": "PhysPort",
+                     "chiral": "CHIRAL", "edinstruments": "edinstruments.org (AIR)"}
+            items = "".join(f"<li>{ext(r['url'], names.get(r['registry'], r['registry']) + (': ' + r['id'] if r.get('id') else ''))}</li>"
+                            for r in idents.get("records", []))
+            status = ("Registries checked" if idents.get("status") == "verified"
+                      else "Not yet checked against all registries") + (f" ({h(idents['checked'])})" if idents.get("checked") else "")
+            parts.append(f"<p><strong>Also registered or catalogued in:</strong> <span class=\"note\">{status}.</span></p>"
+                         + (f"<ul>{items}</ul>" if items else "<p class=\"note\">No records found yet.</p>"))
         if inst.get("info_sources"):
             parts.append("<p><strong>Information drawn from:</strong></p><ul>"
                          + "".join(f"<li>{ext(u)}</li>" for u in inst["info_sources"]) + "</ul>")
@@ -594,7 +608,7 @@ class Site:
             out.append("<p>Nothing deposited yet.</p>")
         out.append(f'<p class="note">Developers and users can make one deposit holding the instrument, its manual, item and scoring files, and a '
                    f'paper in the '
-                   f'{ext(COLLECTION_URL, "HuMeta Instrument Library collection")} on Knowledge Commons: it gets a DOI, a Creative Commons '
+                   f'{ext(COLLECTION_URL, "HuMeta Instrument Library collection")} of the STEMEd+ Commons Library: it gets a DOI, a Creative Commons '
                    f'license you choose, and a link from this page. <a href="{root}recommend/#deposit">How to deposit</a>.</p>')
         return "\n".join(out)
 
@@ -662,14 +676,14 @@ class Site:
                  '<p class="lead">Know a research instrument that should be in the library? Two steps: deposit it on STEMEd+ '
                  'Commons, then tell us about it.</p>',
                  '<h2 id="deposit">Step 1. Deposit it in the HuMeta Instrument Library collection</h2>',
-                 f'<p>Make <strong>one deposit</strong> in {ext(COLLECTION_URL, "the HuMeta Instrument Library collection")} on Knowledge Commons '
-                 'Works (KCWorks) that holds everything about the instrument, each as a separate file: the instrument itself, its '
+                 f'<p>Make <strong>one deposit</strong> in {ext(COLLECTION_URL, "the HuMeta Instrument Library collection")} of the STEMEd+ Commons '
+                 'Library that holds everything about the instrument, each as a separate file: the instrument itself, its '
                  'manual or user guide, item, image, or scoring files, and a paper about it if you may share it. The deposit gets '
                  'a DOI and a permanent home, its Library page links to it, and it reaches the STEMEd+ community.</p><ol>'
-                 f'<li>Sign in to Knowledge Commons, or join free ({ext(KC_JOIN_URL, "how to join")}); you can use GitHub, Google, '
+                 f'<li>Sign in to the STEMEd+ Commons Library, or join free ({ext(KC_JOIN_URL, "how to join")}); you can use GitHub, Google, '
                  'ORCID, or your institution\'s login.</li>'
                  f'<li>Start a {ext(KCWORKS_UPLOAD_URL, "new upload")} and add all the files to it.</li>'
-                 '<li>For the resource type, choose <strong>Text document → Other</strong> (KCWorks has no type for research '
+                 '<li>For the resource type, choose <strong>Text document → Other</strong> (the library has no type for research '
                  'instruments). Add <strong>research instrument</strong> as a keyword, and begin the description with what it is, '
                  'e.g. "A 21-item concept inventory measuring understanding of climate change processes."</li>'
                  '<li>In the <strong>Collections &amp; Access</strong> box, add the <strong>HuMeta Instrument Library</strong> collection (part of STEMEd+). A '
@@ -962,7 +976,7 @@ class Site:
             parts.append('<h2 id="works">Related works</h2><ul>' + "".join(
                 f"<li>{doi_link(r) if r.startswith('10.') else ext(r)}</li>" for r in ds["related"]) + "</ul>")
         parts.append('<p class="note">Listed from the deposit\'s public record in the STEMEd+ Library. To correct it, edit the deposit '
-                     'on Knowledge Commons; this page updates within a day.</p>')
+                     'in the STEMEd+ Commons Library; this page updates within a day.</p>')
         self.write_page(self.url("datasets", did), ds["title"], "\n".join(parts), ds.get("description", ""))
 
     def datasets_page(self) -> None:
@@ -975,7 +989,7 @@ class Site:
             + "</span></li>" for d in rows)
         fetched = self.dataset_index.get("fetched")
         body = f"""<h1>Datasets</h1>
-<p class="lead">Research data deposited in the {ext(DATA_COLLECTION_URL, "STEMEd+ Library's Data collection")} on Knowledge Commons, linked to the instruments, constructs, and theories they used.</p>
+<p class="lead">Research data deposited in the {ext(DATA_COLLECTION_URL, "STEMEd+ Commons Library's Data collection")}, linked to the instruments, constructs, and theories they used.</p>
 <p>The data stay in the STEMEd+ Library, which gives each deposit a DOI and keeps restricted files restricted. This page lists the deposits' public descriptions{f" (checked {h(fetched)})" if fetched else ""}.</p>
 {'<form class="controls" role="search" onsubmit="return false"><div class="search"><label for="dq">Search datasets</label><input id="dq" type="search" placeholder="Title, author, instrument, construct…" autocomplete="off"></div></form>' if rows else ""}
 <h2>Deposits <span class="count">({len(rows)})</span></h2>
@@ -983,7 +997,7 @@ class Site:
 <h2 id="add">How to add a dataset</h2>
 <ol>
 <li><strong>Describe your study in the {ext(PORTAL_URL or REPO_URL, "HuMeta Portal")}</strong> (Modules 1 to 3), including the instruments and constructs you used, and <a href="../studies/#add">register it</a> to give the study its own DOI. Then download your <strong>HuMeta profile</strong> (<code>humeta.json</code>) from Module 4; it carries the study's DOI, so the dataset is listed under its study.</li>
-<li><strong>{ext(DATA_DEPOSIT_URL, "Deposit in the STEMEd+ Library's Data collection")}</strong> on Knowledge Commons (free; sign in with Google, ORCID, GitHub, or your institution). Upload your data files and <code>humeta.json</code>.</li>
+<li><strong>{ext(DATA_DEPOSIT_URL, "Deposit in the STEMEd+ Commons Library's Data collection")}</strong> (free; sign in with Google, ORCID, GitHub, or your institution). Upload your data files and <code>humeta.json</code>.</li>
 <li><strong>Add the HuMeta keywords</strong> the portal gives you, such as <code>humeta:instrument:gci</code> or <code>humeta:construct:self_efficacy</code>. If your files are restricted, the keywords are how your deposit gets linked, because <code>humeta.json</code> can't be read.</li>
 </ol>
 <p class="note">Share only data your consent forms and ethics approvals allow, de-identified. Your deposit appears here within a day.</p>
@@ -1053,7 +1067,7 @@ class Site:
             parts.append('<h2 id="works">Related works</h2><ul>' + "".join(
                 f"<li>{doi_link(r) if r.startswith('10.') else ext(r)}</li>" for r in st["related"]) + "</ul>")
         parts.append('<p class="note">Listed from the registration\'s public record in the STEMEd+ Library. To correct it, edit '
-                     'the deposit on Knowledge Commons (or add a new version); this page updates within a day.</p>')
+                     'the deposit in the STEMEd+ Commons Library (or add a new version); this page updates within a day.</p>')
         self.write_page(self.url("studies", st["id"]), st["title"], "\n".join(parts), st.get("description", ""))
 
     def studies_page(self) -> None:
@@ -1064,7 +1078,7 @@ class Site:
             f'<span class="note">: {h(self.dataset_byline(d))}</span></li>' for d in rows)
         fetched = self.study_index.get("fetched")
         body = f"""<h1>Studies</h1>
-<p class="lead">Studies registered in the {ext(STUDIES_COLLECTION_URL, "STEMEd+ Library's Studies collection")} on Knowledge Commons: each study's design, with its own DOI, linked to the theories, constructs, and instruments it uses.</p>
+<p class="lead">Studies registered in the {ext(STUDIES_COLLECTION_URL, "STEMEd+ Commons Library's Studies collection")}: each study's design, with its own DOI, linked to the theories, constructs, and instruments it uses.</p>
 <p>A study is registered once its design is described, often before any data are collected. Its datasets and other outputs then link back to its DOI. This page lists the registrations' public descriptions{f" (checked {h(fetched)})" if fetched else ""}.</p>
 {'<form class="controls" role="search" onsubmit="return false"><div class="search"><label for="sq">Search studies</label><input id="sq" type="search" placeholder="Title, author, topic, instrument, construct…" autocomplete="off"></div></form>' if rows else ""}
 <h2>Registered studies <span class="count">({len(rows)})</span></h2>
@@ -1073,7 +1087,7 @@ class Site:
 <ol>
 <li><strong>Define your study in the {ext(PORTAL_URL or REPO_URL, "HuMeta Portal")}</strong>: describe it (Module 1), then choose its theory and measures (Module 2).</li>
 <li><strong>Register it in Module 3</strong> (Check, Register &amp; Export): download the study profile as a PDF and as <code>humeta.json</code>, and deposit both in the {ext(STUDIES_COLLECTION_URL, "Studies collection")} (free; sign in with Google, ORCID, GitHub, or your institution). Add the HuMeta keywords the portal gives you.</li>
-<li><strong>Save the DOI</strong> Knowledge Commons gives you back in the portal. Datasets you deposit later carry it, so they are listed under the study.</li>
+<li><strong>Save the DOI</strong> the STEMEd+ Commons Library gives you back in the portal. Datasets you deposit later carry it, so they are listed under the study.</li>
 </ol>
 <p class="note">Registrations are public and permanent. Register when you are ready for the design to be public; add a new version if the study changes. Your study appears here within a day.</p>
 <script>

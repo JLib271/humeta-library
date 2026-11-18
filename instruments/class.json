@@ -23,6 +23,18 @@
     }
   ],
   "variable_prefix": "class",
+  "metadata_code": "Adams2006",
+  "identifiers": {
+    "status": "needs_check",
+    "checked": "2026-11-18",
+    "note": "PsycTests (APA, subscription) and ZIS have not been searched by a reviewer yet.",
+    "records": [
+      {
+        "registry": "physport",
+        "url": "https://www.physport.org/assessments/CLASS"
+      }
+    ]
+  },
   "instrument_type": "attitude_beliefs_survey",
   "participants": [
     "students"

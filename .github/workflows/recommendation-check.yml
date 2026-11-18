@@ -1,6 +1,6 @@
 name: Recommendation deposit check
 
-# When someone recommends an instrument, read the KCWorks deposit they linked (license, DOI,
+# When someone recommends an instrument, read the STEMEd+ Commons Library deposit they linked (license, DOI,
 # collection) and comment on the issue. The issue text is passed only as an environment variable
 # and is never run.
 

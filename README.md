@@ -19,8 +19,8 @@ the [issue forms](https://github.com/JLib271/humeta-library/issues/new/choose).
 
 The website's [Datasets](https://jlib271.github.io/humeta-library/datasets/)
 pages list research data deposited in the STEMEd+ Library's
-[Data collection](https://works.hcommons.org/collections/stemedplus-data) on
-Knowledge Commons, and link each deposit to the instruments, constructs, and
+[Data collection](https://works.hcommons.org/collections/stemedplus-data) in
+the STEMEd+ Commons Library, and link each deposit to the instruments, constructs, and
 theories it used; those pages link back. The links come from the HuMeta study
 profile (`humeta.json`) a depositor attaches, and from HuMeta keywords such as
 `humeta:instrument:gci`, `humeta:construct:self_efficacy`, or
@@ -71,7 +71,7 @@ scripts/validate_library.py  run before opening a pull request
 scripts/build_site.py        builds the website (uses the HuMeta Portal's code)
 scripts/fetch_datasets.py    reads the STEMEd+ Library's Data and Studies collections for the Datasets and Studies pages
 scripts/check_recommendation.py, kcworks_lookup.py
-                             check the Knowledge Commons deposit on a recommendation
+                             check the STEMEd+ Commons Library deposit on a recommendation
 site/assets/                 the website's styles, script, and logos
 ```
 
@@ -99,13 +99,13 @@ rather than adding it to the library.
 **DataCite.** Each instrument record is also published as DataCite 4.7 metadata
 ([`oem/instrument_metadata.py`](https://github.com/JLib271/HuMeta/blob/main/oem/instrument_metadata.py) in the portal; `data/datacite/<id>.json` on the Library
 website), and its Library page embeds a schema.org description. The instrument
-is typed `Text` with resource type "Research instrument: ..." (KCWorks files
+is typed `Text` with resource type "Research instrument: ..." (the STEMEd+ Commons Library files
 instruments as Text document > Other; DataCite's `Instrument` type is meant for
 physical devices). Creators come from `developers`; subjects are the HuMeta
 constructs, disciplines (with ANZSRC and FOS codes), education levels (with
 ISCED), settings, participants, data collection method, and measurement
-evidence; related identifiers link its papers (IsDescribedBy) and KCWorks
-deposit. A dataset collected with the instrument points back to it
+evidence; related identifiers link its papers (IsDescribedBy) and STEMEd+ Commons
+Library deposit. A dataset collected with the instrument points back to it
 (IsCollectedBy), as the HuMeta Portal's dataset export already does.
 
 ## The three record types
@@ -169,8 +169,8 @@ one score. Inter-rater agreement is reliability evidence the rubric does not
 score (it was written for tests and surveys), so it is shown alongside.
 
 **STEMEd+ Commons deposits** (`commons_records`). Links to deposits about the
-instrument on Knowledge Commons Works, ideally in the HuMeta Instrument Library collection
-(https://works.hcommons.org/collections/humetainstrumentlibrary/, part of STEMEd+): the instrument, its
+instrument in the STEMEd+ Commons Library, ideally in its HuMeta Instrument Library sub-collection
+(https://works.hcommons.org/collections/humetainstrumentlibrary/): the instrument, its
 manual, a paper, or a link record, with the license chosen at deposit. When the
 rights holder deposits the instrument itself under an open license, that
 deposit can serve as the `access.item_text_basis` (basis `open_license`, with
@@ -221,7 +221,8 @@ or first use has been agreed (the label is then provisional). A construct's
 
 **Standard variables** (`standard_variables.json`) are demographic and context
 variables with fixed names, wording and codes, for example `participant_id`,
-`age_years`, `race_eth` (the 2024 federal combined race/ethnicity question)
+`age_years`, `race_eth` (the US federal government's 2024 combined race/ethnicity
+question, OMB SPD 15)
 and `consent_share`. Each has a `sensitivity` rating (`direct_identifier`,
 `quasi_identifier`, `sensitive`, `none`) used to flag variables that need
 review before data are shared.
@@ -233,7 +234,8 @@ Instead each points to ICPSR's metadata, with an `icpsr_term` from the [ICPSR
 Subject Thesaurus](https://www.icpsr.umich.edu/web/ICPSR/thesaurus/10001) and
 ICPSR's [variables database](https://www.icpsr.umich.edu/web/ICPSR/search/variables)
 for wording other studies have used, and, where values come from an external
-code list, a `code_list` (CIP 2020 codes for `major_cip`).
+code list, a `code_list` (CIP 2020 codes from the US National Center for Education Statistics for
+`major_cip`).
 
 **Variable names** are generated, not typed, using the rules in
 The portal's [`oem/naming.py`](https://github.com/JLib271/HuMeta/blob/main/oem/naming.py): `<instrument prefix>_<item_id>` (e.g. `gci_q05`), one 0/1
@@ -241,6 +243,22 @@ variable per option for select-all items (`gci_q01_c`), fixed names for
 standard variables, and `_pre` / `_post` / `_t1` … suffixes for repeated
 measures. Each instrument's `variable_prefix` must be unique and never change
 once data exist.
+
+**Metadata codes.** Each instrument has a fixed `metadata_code`, the first
+author's surname and year of the original publication (`Pintrich1991`), with a
+letter added if two instruments would clash (`Smith2013a`). The portal builds
+HuMeta metadata codes as Construct_Measure_Item_Target
+(`self_efficacy_SCT_Pintrich1991_item5_...`) so studies using the same
+construct, instrument, item or target can be found. The code never changes once
+published, even if the citation is corrected.
+
+**Identifiers elsewhere.** HuMeta links to existing instrument records rather
+than duplicating them. `identifiers` lists them in this order of preference:
+an APA PsycTests DOI (`10.1037/t#####-000`); a DOI from ZIS (GESIS), the Open
+Test Archive (ZPID) or FDZ Bildung (DIPF); a LOINC code for health
+instruments. Catalog pages without persistent identifiers (PhysPort, CHIRAL,
+AIR's edinstruments.org) and ERIC numbers are listed too. `status` stays
+`needs_check` until a reviewer has searched PsycTests (subscription) and ZIS.
 
 ## Review status
 

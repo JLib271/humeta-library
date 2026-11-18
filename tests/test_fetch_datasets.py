@@ -1,6 +1,6 @@
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The dataset index is built from the STEMEd+ Data collection on Knowledge Commons."""
+"""The dataset index is built from the STEMEd+ Commons Library's Data collection."""
 from __future__ import annotations
 
 import sys
