@@ -1,11 +1,11 @@
-# HuMeta: persistent identifiers for the HuMeta Instrument Library
-# (instruments and their versions, constructs, theories and frameworks) and the
-# HuMeta metadata-code scheme (Construct_Measure_Item_Target).
+# # /humeta/
 #
-# Project:  HuMeta, part of STEMEd+ Commons
-# Website:  https://jlib271.github.io/humeta-library/
-# Source:   https://github.com/JLib271/humeta-library
-# Contact:  Julie C. Libarkin, Michigan State University (GitHub: JLib271)
+# Persistent identifiers for HuMeta, part of STEMEd+ Commons: the HuMeta
+# Instrument Library (instruments and their versions and items, constructs,
+# theories and frameworks) and the HuMeta metadata-code scheme
+# (Construct_Measure_Item_Target).
+#
+# https://w3id.org/humeta/ redirects to https://jlib271.github.io/humeta-library/
 #
 # Identifiers:
 #   https://w3id.org/humeta/instrument/<id>              an instrument
@@ -13,12 +13,19 @@
 #   https://w3id.org/humeta/instrument/<id>/item/<item>  one item, the same in every version that has it
 #   https://w3id.org/humeta/instrument/<id>.json         its library record (JSON)
 #   https://w3id.org/humeta/construct/<id>               a shared construct
-#   https://w3id.org/humeta/<instrument|construct|framework>   the list of them (vocabulary scheme)
 #   https://w3id.org/humeta/framework/<id>               a theory or framework
+#   https://w3id.org/humeta/<instrument|construct|framework>   the list of them (vocabulary scheme)
 #   https://w3id.org/humeta/metadata-code                the metadata-code scheme
 # Ids are the library's record ids with "_" written as "-".
+#
+# Source: https://github.com/JLib271/humeta-library
+#
+# ## Contact
+# This space is administered by:
+#
+# Julie C. Libarkin, Michigan State University
+# GitHub username: JLib271
 
-Options +FollowSymLinks
 RewriteEngine on
 
 RewriteRule ^instrument/([a-z0-9-]+)\.json$ https://jlib271.github.io/humeta-library/data/instruments/$1.json [R=302,L]
