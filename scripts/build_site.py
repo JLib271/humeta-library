@@ -1338,7 +1338,7 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
 <p class="cta"><a class="btn secondary" href="recommend/">Recommend an instrument</a> <a href="compare/">Compare instruments by their evidence</a></p>
 </div>
 <form class="controls" role="search" onsubmit="return false">
-<div class="search"><label for="q">Search</label><input id="q" type="search" placeholder="Try belonging, self-efficacy, climate, Rasch…" autocomplete="off"></div>
+<div class="search"><label for="q">Search</label><input id="q" type="search" placeholder="Try belonging, self-efficacy, Libarkin, hmi0004…" autocomplete="off"></div>
 <div><label for="type">Show</label><select id="type"><option value="">Everything</option><option value="instrument">Instruments</option><option value="theory">Theories and lenses</option><option value="construct">Constructs</option></select></div>
 <div><label for="field">Field</label><select id="field"><option value="">All fields</option>{"".join(f'<option value="{h(f)}">{h(label(f))}</option>' for f in fields)}</select></div>
 </form>
@@ -1493,10 +1493,14 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
     def index_records(self) -> list[dict]:
         out = []
         for i in sorted(self.lib.instruments.values(), key=lambda x: x["name"].lower()):
-            words = [i.get("acronym", ""), i.get("description", ""), label(i.get("instrument_type"))]
+            code = i.get("metadata_code") or ""
+            words = [i.get("acronym", ""), i.get("description", ""), label(i.get("instrument_type")), code,
+                     " ".join(d.get("name", "") for d in i.get("developers", [])),
+                     " ".join(code + (v.get("code") or "") for v in i.get("versions", []))]
             words += [self.lib.constructs[c]["label"] for c in i.get("construct_ids", []) if c in self.lib.constructs]
             words += [d["name"] for d in i.get("dimensions", [])]
-            out.append({"type": "instrument", "title": i["name"] + (f" ({i['acronym']})" if i.get("acronym") else ""),
+            out.append({"type": "instrument", "pid": i.get("pid", ""),
+                        "title": i["name"] + (f" ({i['acronym']})" if i.get("acronym") else ""),
                         "url": self.url("instruments", i["id"]), "kind": label(i.get("instrument_type")),
                         "status": label(i.get("review", {}).get("status")), "summary": i.get("description", ""),
                         "fields": ["education"], "text": " ".join(words),
@@ -1508,13 +1512,13 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
             if f.get("kind") in ("own", "exploratory"):
                 continue
             words = [f.get("description", ""), f.get("citation", "")] + [c["label"] for c in f.get("constructs", [])]
-            out.append({"type": "theory", "title": f["label"], "url": self.url("frameworks", f["id"]),
+            out.append({"type": "theory", "pid": f.get("pid", ""), "title": f["label"], "url": self.url("frameworks", f["id"]),
                         "kind": label(f.get("kind")), "status": label(f.get("status")), "summary": f.get("description", ""),
                         "fields": f.get("fields", []), "text": " ".join(words)})
         for c in sorted((c for c in self.lib.constructs.values() if not c.get("retired")), key=lambda x: x["label"].lower()):
             fields = sorted({x for fw, _ in self.construct_frameworks(c["id"]) for x in fw.get("fields", [])}
                             | ({"education"} if self.construct_instruments(c["id"]) else set()))
-            out.append({"type": "construct", "title": c["label"], "url": self.url("constructs", c["id"]),
+            out.append({"type": "construct", "pid": c.get("pid", ""), "title": c["label"], "url": self.url("constructs", c["id"]),
                         "kind": label(c.get("domain")), "status": "", "summary": c.get("definition", ""),
                         "fields": fields, "text": " ".join([c.get("definition", "")] + c.get("synonyms", []) + c.get("eric", []))})
         return out

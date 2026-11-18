@@ -273,3 +273,14 @@ def test_item_crosswalk_shows_possible_and_confirmed_links():
     assert "Possible links" in html and "Confirmed links" in html and "1 possible link(s) await checking" in html
     assert "source of: split" in html  # q02 shows the confirmed link from q11
     assert "https://w3id.org/humeta/instrument/hmi0099/item/" in html
+
+
+
+def test_search_index_has_identifiers_developers_and_codes(site):
+    html = (site / "index.html").read_text(encoding="utf-8")
+    data = re.search(r'<script type="application/json" id="index">(.*?)</script>', html, re.S)
+    records = json.loads(data.group(1).replace("<\\/", "</"))
+    gci = next(r for r in records if r.get("pid") == "hmi0004")
+    assert gci["url"] == "instruments/hmi0004/"
+    assert "Libarkin" in gci["text"] and "Libarkin2005V4" in gci["text"]
+    assert {r["pid"] for r in records if r["type"] == "construct"} >= {"hmc0024"}

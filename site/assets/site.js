@@ -29,6 +29,10 @@
 
   function render() {
     var words = norm(q.value).split(/\s+/).filter(Boolean), t = type.value, f = field.value;
+    // A HuMeta identifier, short (hmi0004, hmi0004.1, humeta.instrument:hmi0004) or as its w3id address,
+    // finds that record; other words in the query then don't have to match.
+    var pid = norm(q.value).match(/\bhm[icf][0-9]{4}\b/);
+    if (pid) words = [];
     var params = new URLSearchParams();
     if (q.value.trim()) params.set('q', q.value.trim());
     if (t) params.set('type', t);
@@ -37,12 +41,13 @@
     chosen.forEach(function (s) { params.set(s.dataset.facet, s.value); });
     var qs = params.toString();
     history.replaceState(null, '', qs ? '?' + qs : location.pathname);
-    if (!words.length && !t && !f && !chosen.length) { results.hidden = true; browse.hidden = false; count.textContent = ''; return; }
+    if (!pid && !words.length && !t && !f && !chosen.length) { results.hidden = true; browse.hidden = false; count.textContent = ''; return; }
     var hits = records.filter(function (r) {
       if (chosen.length && !r.facets) return false;
       for (var i = 0; i < chosen.length; i++) {
         if ((r.facets[chosen[i].dataset.facet] || []).indexOf(chosen[i].value) < 0) return false;
       }
+      if (pid) return r.pid === pid[0];
       return (!t || r.type === t) && (!f || r.fields.indexOf(f) >= 0) &&
         words.every(function (w) { return r._hay.indexOf(w) >= 0; });
     });
