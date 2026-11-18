@@ -1,8 +1,8 @@
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Look up a Knowledge Commons Works (KCWorks) deposit: title, DOI, license, and collections.
+"""Look up a STEMEd+ Commons Library deposit: title, DOI, license, and collections.
 
-KCWorks runs InvenioRDM, whose public API returns a record's metadata, including its license
+The library runs InvenioRDM, whose public API returns a record's metadata, including its license
 (``metadata.rights``) and the collections ("communities") it belongs to. Given a deposit link, this
 prints a ``commons_records`` entry for an instrument record in ``instruments/``:
 
@@ -23,7 +23,7 @@ import urllib.request
 
 API = "https://works.hcommons.org/api"
 SITE = "https://works.hcommons.org"
-#: KCWorks collections (InvenioRDM community slugs) that count: the HuMeta Instrument Library subcollection and its parent
+#: Collections (InvenioRDM community slugs) that count: the HuMeta Instrument Library subcollection and its parent
 STEMEDPLUS_COLLECTIONS = ("humetainstrumentlibrary", "stemedplus")
 KCWORKS_DOI_PREFIX = "10.17613/"
 USER_AGENT = "HuMeta-Library (https://github.com/JLib271/humeta-library)"
@@ -33,7 +33,7 @@ DOI_RE = re.compile(r"(10\.\d{4,9}/[^\s?#\"<>]+)", re.I)
 
 
 class LookupError_(Exception):
-    """The link is not a KCWorks deposit, or the record could not be read."""
+    """The link is not a STEMEd+ Commons Library deposit, or the record could not be read."""
 
 
 def get_json(url: str) -> dict:
@@ -43,7 +43,7 @@ def get_json(url: str) -> dict:
 
 
 def parse_link(link: str) -> tuple[str | None, str | None]:
-    """(record id, DOI) found in a KCWorks record link or a DOI link; either may be None."""
+    """(record id, DOI) found in a STEMEd+ Commons Library record link or a DOI link; either may be None."""
     link = (link or "").strip()
     m = RECORD_RE.search(link)
     if m:
@@ -60,12 +60,12 @@ def find_record(link: str, fetch=get_json) -> dict:
         return fetch(f"{API}/records/{record_id}")
     if doi:
         if not doi.startswith(KCWORKS_DOI_PREFIX):
-            raise LookupError_(f"{doi} is not a Knowledge Commons DOI (they start with {KCWORKS_DOI_PREFIX}).")
+            raise LookupError_(f"{doi} is not a STEMEd+ Commons Library DOI (they start with {KCWORKS_DOI_PREFIX}).")
         q = urllib.parse.quote(f'pids.doi.identifier:"{doi}"')
         hits = fetch(f"{API}/records?q={q}&size=1").get("hits", {}).get("hits", [])
         if hits:
             return hits[0]
-        raise LookupError_(f"No KCWorks record has the DOI {doi}.")
+        raise LookupError_(f"No STEMEd+ Commons Library record has the DOI {doi}.")
     raise LookupError_("That is not a link to a KCWorks record (https://works.hcommons.org/records/...) or a 10.17613 DOI.")
 
 

@@ -8,10 +8,10 @@ know anything about the HuMeta Portal's code to contribute.
 - **In the HuMeta Portal:** Module 2 (Framework and Measures) → the **Recommend** tabs. Your
   recommendation arrives here as a pull request that adds one file to `suggestions/`.
 - **On the website:** the [Recommend page](https://jlib271.github.io/humeta-library/recommend/)
-  explains how to deposit an instrument on Knowledge Commons and links to the forms.
+  explains how to deposit an instrument in the STEMEd+ Commons Library and links to the forms.
 - **On GitHub:** the [issue forms](https://github.com/JLib271/humeta-library/issues/new/choose)
   for an instrument, a theory or framework, or a correction. When an instrument recommendation links
-  a Knowledge Commons deposit, a workflow checks the deposit and comments on the issue.
+  a STEMEd+ Commons Library deposit, a workflow checks the deposit and comments on the issue.
 
 Recommendations are public from the moment they are submitted.
 

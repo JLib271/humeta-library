@@ -1,6 +1,6 @@
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""KCWorks deposit lookup and the recommendation-issue comment, with a sample InvenioRDM record."""
+"""STEMEd+ Commons Library deposit lookup and the recommendation-issue comment, with a sample InvenioRDM record."""
 
 from __future__ import annotations
 
@@ -71,7 +71,7 @@ def test_license_flags():
 
 def _body(link="", contents=("The instrument (questionnaire, test, protocol, or rubric)", "Manual or user guide"), holder=True):
     ticks = "\n".join(f"- [X] {c}" for c in contents) + "\n- [ ] A paper about it"
-    return (f"### Instrument name (and acronym)\n\nExample CI\n\n### Link to the deposit on Knowledge Commons (KCWorks)\n\n"
+    return (f"### Instrument name (and acronym)\n\nExample CI\n\n### Link to the deposit in the STEMEd+ Commons Library\n\n"
             f"{link or '_No response_'}\n\n### What's in the deposit?\n\n{ticks}\n\n### Rights\n\n"
             f"- [{'X' if holder else ' '}] I hold the rights to what I deposited\n\n### How was it developed?\n\nNot sure\n")
 
@@ -102,3 +102,9 @@ def test_single_file_with_several_contents_is_flagged():
         return rec if "/records/abcde-12345" in url else fake_fetch(url)
     text = C.build_comment(_body("https://works.hcommons.org/records/abcde-12345"), fetch)
     assert "Only one file is in the record" in text
+
+
+def test_issues_filed_before_the_rename_are_still_read():
+    body = "### Link to the deposit on Knowledge Commons (KCWorks)\n\nhttps://works.hcommons.org/records/abcde-12345\n"
+    assert C.form_field(body, C.LINK_HEADING) == ""
+    assert "abcde-12345" in next(C.form_field(body, h) for h in C.OLD_LINK_HEADINGS)

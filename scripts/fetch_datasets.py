@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Read the STEMEd+ Library's Data or Studies collection into an index the HuMeta Library links.
 
-Datasets live in the STEMEd+ Library on Knowledge Commons (KCWorks), in the Data
+Datasets live in the STEMEd+ Commons Library, in the Data
 subcollection; registered studies (a study's design, deposited from the HuMeta Portal's
 Module 3 to give the study its own DOI) live in the Studies subcollection. This reads a
 collection's public records and, for each, works out what it connects to in the HuMeta
@@ -18,7 +18,7 @@ Library:
   (so humeta.json can't be read) and add to humeta.json when both are present.
 
 Only public record metadata is read; restricted files are never downloaded. If
-Knowledge Commons can't be reached, the index published with the current website
+the STEMEd+ Commons Library can't be reached, the index published with the current website
 is reused, so a failed fetch never empties the site's dataset pages.
 
     python scripts/fetch_datasets.py                    # writes _datasets.json
@@ -40,11 +40,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kcworks_lookup as K  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
-#: The STEMEd+ Library's Data subcollection (KCWorks community slug)
+#: The STEMEd+ Library's Data subcollection (collection slug)
 DATA_COLLECTION = "stemedplus-data"
 #: The STEMEd+ Library's Studies subcollection: registered studies, each with its own DOI
 STUDIES_COLLECTION = "stemedplus-studies"
-#: The indexes the current website publishes, reused when Knowledge Commons can't be reached
+#: The indexes the current website publishes, reused when the STEMEd+ Commons Library can't be reached
 PUBLISHED_INDEX = "https://jlib271.github.io/humeta-library/data/datasets.json"
 PUBLISHED_STUDY_INDEX = "https://jlib271.github.io/humeta-library/data/studies.json"
 #: kind -> (default collection, index format, published index)
@@ -188,7 +188,7 @@ def fetch_collection(slug: str = DATA_COLLECTION, fetch=K.get_json) -> list[dict
 
 
 def build_index(slug: str | None = None, fetch=K.get_json, kind: str = "datasets") -> dict:
-    """The index of a collection (``kind`` "datasets" or "studies"), from Knowledge Commons or, failing that,
+    """The index of a collection (``kind`` "datasets" or "studies"), from the STEMEd+ Commons Library or, failing that,
     from the current website. Entries are under the ``kind`` key."""
     default_slug, fmt, published = KINDS[kind]
     slug = slug or default_slug
@@ -213,7 +213,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--kind", choices=list(KINDS), default="datasets",
                     help="datasets (the Data collection) or studies (the Studies collection)")
     ap.add_argument("--out", type=Path, help="default: _datasets.json or _studies.json")
-    ap.add_argument("--collection", help="KCWorks collection slug (default: the kind's collection)")
+    ap.add_argument("--collection", help="STEMEd+ Commons Library collection slug (default: the kind's collection)")
     args = ap.parse_args(argv)
     out = args.out or REPO / f"_{args.kind}.json"
     index = build_index(args.collection, kind=args.kind)

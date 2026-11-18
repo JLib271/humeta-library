@@ -1,9 +1,9 @@
 # Copyright (C) 2026 Julie C. Libarkin
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Comment on an instrument recommendation with what its KCWorks deposit says.
+"""Comment on an instrument recommendation with what its STEMEd+ Commons Library deposit says.
 
 Run by .github/workflows/recommendation-check.yml when a "Recommend an instrument" issue is opened or
-edited. It finds the deposit link in the issue form, looks the record up on Knowledge Commons Works,
+edited. It finds the deposit link in the issue form, looks the record up in the STEMEd+ Commons Library,
 and posts (or updates) one comment with the deposit's title, DOI, license, and whether it is in the
 HuMeta Instrument Library collection (part of STEMEd+), plus a ready-to-paste ``commons_records`` entry. The issue text is untrusted: only
 a link is extracted from it, and nothing from it is run.
@@ -25,7 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kcworks_lookup as K  # noqa: E402
 
 MARKER = "<!-- humeta-deposit-check -->"
-LINK_HEADING = "Link to the deposit on Knowledge Commons (KCWorks)"
+LINK_HEADING = "Link to the deposit in the STEMEd+ Commons Library"
+OLD_LINK_HEADINGS = ("Link to the deposit on Knowledge Commons (KCWorks)",)  # issues filed before the rename
 CONTENTS_HEADING = "What's in the deposit?"
 RIGHTS_HEADING = "Rights"
 CONTENTS = {"The instrument": "instrument", "Manual or user guide": "manual", "Item, image, or scoring files": "item_files",
@@ -54,7 +55,8 @@ def safe(text: str) -> str:
 
 
 def build_comment(body: str, fetch=K.get_json) -> str:
-    link = form_field(body, LINK_HEADING)
+    link = form_field(body, LINK_HEADING) or next(
+        (v for v in (form_field(body, h) for h in OLD_LINK_HEADINGS) if v), "")
     contents = ticked(form_field(body, CONTENTS_HEADING))
     holder = "[x]" in form_field(body, RIGHTS_HEADING).lower()
     lines = [MARKER, "### STEMEd+ Commons deposit check"]
@@ -69,7 +71,7 @@ def build_comment(body: str, fetch=K.get_json) -> str:
     except K.LookupError_ as exc:
         return "\n\n".join(lines + [f"Could not read the deposit link: {safe(exc)}"])
     except Exception:  # noqa: BLE001
-        return "\n\n".join(lines + ["Could not reach Knowledge Commons Works just now. A maintainer will check the link."])
+        return "\n\n".join(lines + ["Could not reach the STEMEd+ Commons Library just now. A maintainer will check the link."])
     lic = s["licenses"]
     lic_text = ", ".join(safe(x["title"]) for x in lic) if lic else "none recorded"
     rows = [f"- **Title:** {safe(s['title'])}",
