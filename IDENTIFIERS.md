@@ -28,6 +28,10 @@ The scheme URIs `https://w3id.org/humeta/instrument`, `.../construct` and `.../f
 the lists of records, and `https://w3id.org/humeta/metadata-code` names the HuMeta metadata-code
 scheme (Construct_Measure_Item_Target).
 
+Each record has one address on the library's website, named by its identifier
+(`https://jlib271.github.io/humeta-library/instruments/hmi0004/`), and its data files are named
+the same way (`data/instruments/hmi0004.json`). There are no name-based copies.
+
 The identifiers resolve through [w3id.org](https://w3id.org/), a community-run redirect
 service. The redirect rules are in [`w3id/ids/humeta/.htaccess`](w3id/ids/humeta/.htaccess). If
 the library's website moves, only the redirect changes; the identifiers do not.

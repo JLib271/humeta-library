@@ -35,12 +35,12 @@ def site(tmp_path_factory):
 def test_every_record_has_a_page(site):
     lib = load()
     for iid in lib.instruments:
-        assert (site / "instruments" / B.slug(iid) / "index.html").is_file()
+        assert (site / "instruments" / lib.instruments[iid]["pid"] / "index.html").is_file()
     for fid, fw in lib.frameworks.items():
         if fw.get("kind") in ("theory", "lens"):
-            assert (site / "frameworks" / B.slug(fid) / "index.html").is_file()
+            assert (site / "frameworks" / fw["pid"] / "index.html").is_file()
     for cid in lib.constructs:
-        assert (site / "constructs" / B.slug(cid) / "index.html").is_file()
+        assert (site / "constructs" / lib.constructs[cid]["pid"] / "index.html").is_file()
     for page in ("index.html", "reference/index.html", "about/index.html", "404.html", "sitemap.xml"):
         assert (site / page).is_file()
 
@@ -48,8 +48,11 @@ def test_every_record_has_a_page(site):
 def test_page_urls_match_the_app(site):
     """The portal links to record pages by the same address scheme the site uses."""
     from oem import vocab
-    iid = next(iter(load().instruments))
-    assert vocab.library_page_url("instruments", iid).endswith(B.Site.url("instruments", iid))
+    lib = load()
+    iid = next(iter(lib.instruments))
+    url = vocab.library_page_url(lib, "instruments", iid)
+    assert url.endswith(f"/instruments/{lib.instruments[iid]['pid']}/")
+    assert (site / url.removeprefix(vocab.LIBRARY_SITE_URL) / "index.html").is_file()
 
 
 def test_published_archive_is_the_library(site, tmp_path):
@@ -98,7 +101,7 @@ def test_downloads(site):
     with (site / "data" / "evidence.csv").open(encoding="utf-8") as f:
         assert len(list(csv.DictReader(f))) == len(lib.evidence)
     for iid in lib.instruments:
-        assert json.loads((site / "data" / "instruments" / f"{iid}.json").read_text(encoding="utf-8"))["id"] == iid
+        assert json.loads((site / "data" / "instruments" / f"{lib.instruments[iid]['pid']}.json").read_text(encoding="utf-8"))["id"] == iid
     index = json.loads(re.search(r'<script type="application/json" id="index">(.*?)</script>',
                                  (site / "index.html").read_text(encoding="utf-8"), re.S).group(1))
     assert {r["type"] for r in index} == {"instrument", "theory", "construct"}
@@ -119,9 +122,9 @@ def _fake_library(tmp_path, shareable: bool) -> Path:
 def test_item_text_and_images_follow_access(tmp_path, shareable):
     out = tmp_path / "_site"
     B.main(["--out", str(out), "--library", str(_fake_library(tmp_path, shareable))])
-    html = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    html = (out / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     stem = json.loads((ROOT / "items" / "gci" / "gci-v4-2014.json").read_text(encoding="utf-8"))["items"][0]["stem"]
-    figures = list((out / "instruments" / "gci" / "figures").glob("*.png")) if (out / "instruments" / "gci" / "figures").exists() else []
+    figures = list((out / "instruments" / "hmi0004" / "figures").glob("*.png")) if (out / "instruments" / "hmi0004" / "figures").exists() else []
     if shareable:
         assert B.h(stem) in html and figures
     else:
@@ -133,7 +136,7 @@ def test_answer_keys_never_shown_without_permission(site):
     lib = load()
     for iid, inst in lib.instruments.items():
         if not inst.get("access", {}).get("answer_key_shareable"):
-            html = (site / "instruments" / B.slug(iid) / "index.html").read_text(encoding="utf-8")
+            html = (site / "instruments" / lib.instruments[iid]["pid"] / "index.html").read_text(encoding="utf-8")
             assert ">correct</span>" not in html
 
 
@@ -149,7 +152,7 @@ def test_compare_page_and_profiles(site):
     html = (site / "compare" / "index.html").read_text(encoding="utf-8")
     lib = load()
     assert html.count("<tr data-") == len(lib.instruments)
-    page = (site / "instruments" / "mslq" / "index.html").read_text(encoding="utf-8")
+    page = (site / "instruments" / "hmi0006" / "index.html").read_text(encoding="utf-8")
     assert 'id="profile"' in page and "15 values, 0.52 to 0.93; guide &gt; 0.7" in page
     assert (site / "data" / "evidence_profiles.csv").is_file()
     assert 'id="rubric"' in (site / "about" / "index.html").read_text(encoding="utf-8")
@@ -159,7 +162,7 @@ def test_recommend_page_and_issue_forms(site):
     import yaml
     page = (site / "recommend" / "index.html").read_text(encoding="utf-8")
     assert "issues/new?template=instrument_submission.yml" in page
-    assert "library_correction.yml" in (site / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    assert "library_correction.yml" in (site / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     form = yaml.safe_load((ROOT / ".github" / "ISSUE_TEMPLATE" / "instrument_submission.yml").read_text(encoding="utf-8"))
     ids = {b.get("id") for b in form["body"]}
     required = {b["id"] for b in form["body"] if b.get("validations", {}).get("required")}
@@ -173,7 +176,7 @@ def test_recommend_page_and_issue_forms(site):
 
 
 def test_commons_deposits(site):
-    page = (site / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    page = (site / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     assert 'id="commons"' in page and "10.17613/wnm5z-00x75" in page
     assert "works.hcommons.org/collections/humetainstrumentlibrary" in (site / "recommend" / "index.html").read_text(encoding="utf-8")
     assert "Join free" in (site / "index.html").read_text(encoding="utf-8")
@@ -189,9 +192,9 @@ def test_dataset_pages_and_backlinks(tmp_path):
     listing = (out / "datasets" / "index.html").read_text(encoding="utf-8")
     assert "Deposits <span class=\"count\">(2)</span>" in listing and 'href="aaaaa-11111/"' in listing
     page = (out / "datasets" / "aaaaa-11111" / "index.html").read_text(encoding="utf-8")
-    assert 'href="../../instruments/gci/"' in page and "made_up_theory" in page and "not in the library yet" in page
+    assert 'href="../../instruments/hmi0004/"' in page and "made_up_theory" in page and "not in the library yet" in page
     assert 'href="../bbbbb-22222/"' in page  # shares the GCI
-    gci = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    gci = (out / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     assert 'href="../../datasets/aaaaa-11111/"' in gci and 'href="../../datasets/bbbbb-22222/"' in gci
     assert json.loads((out / "data" / "datasets.json").read_text(encoding="utf-8"))["datasets"][0]["id"]
 
@@ -210,11 +213,11 @@ def test_study_pages_link_datasets_and_library_records(tmp_path):
     listing = (out / "studies" / "index.html").read_text(encoding="utf-8")
     assert "Registered studies <span class=\"count\">(1)</span>" in listing and 'href="sssss-00001/"' in listing
     page = (out / "studies" / "sssss-00001" / "index.html").read_text(encoding="utf-8")
-    assert 'href="../../instruments/gci/"' in page
+    assert 'href="../../instruments/hmi0004/"' in page
     assert 'href="../../datasets/aaaaa-11111/"' in page and 'href="../../datasets/bbbbb-22222/"' not in page
     dataset = (out / "datasets" / "aaaaa-11111" / "index.html").read_text(encoding="utf-8")
     assert 'href="../../studies/sssss-00001/"' in dataset
-    gci = (out / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    gci = (out / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     assert 'href="../../studies/sssss-00001/"' in gci
     assert json.loads((out / "data" / "studies.json").read_text(encoding="utf-8"))["studies"][0]["id"] == "sssss-00001"
 
@@ -227,32 +230,31 @@ def test_no_studies_still_builds_the_studies_page(tmp_path):
 
 
 def test_records_carry_persistent_identifiers(site):
-    page = (site / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
+    page = (site / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
     assert "https://w3id.org/humeta/instrument/hmi0004" in page and "Libarkin2005V4" in page
     assert "https://w3id.org/humeta/instrument/hmi0004.1" in page and 'id="version-1"' in page
     assert "humeta.instrument:hmi0004" in page and "Cite this record" in page
     ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', page, re.S).group(1).replace("<\\/", "</"))
     assert ld["@id"] == "https://w3id.org/humeta/instrument/hmi0004"
-    dc = json.loads((site / "data" / "datacite" / "gci.json").read_text(encoding="utf-8"))
+    dc = json.loads((site / "data" / "datacite" / "hmi0004.json").read_text(encoding="utf-8"))
     assert dc["alternateIdentifiers"][0] == {"alternateIdentifier": "https://w3id.org/humeta/instrument/hmi0004",
                                              "alternateIdentifierType": "URL"}
     se = next(c for c in Library.load(ROOT).constructs.values() if c["id"] == "self_efficacy")
     assert f"https://w3id.org/humeta/construct/{se['pid']}" in (
-        site / "constructs" / "self-efficacy" / "index.html").read_text(encoding="utf-8")
+        site / "constructs" / se["pid"] / "index.html").read_text(encoding="utf-8")
     rules = (ROOT / "w3id" / "ids" / "humeta" / ".htaccess").read_text(encoding="utf-8")
     for kind in ("instrument", "construct", "framework", "metadata-code"):
         assert f"^{kind}" in rules
 
 
-def test_identifier_addresses_forward_to_the_record(site):
-    """w3id.org sends https://w3id.org/humeta/instrument/hmi0004 to instruments/hmi0004/, which forwards."""
-    stub = (site / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
-    assert "../../instruments/gci/" in stub and "location.hash" in stub and "noindex" in stub
-    assert (site / "data" / "instruments" / "hmi0004.json").read_text(encoding="utf-8") == \
-        (site / "data" / "instruments" / "gci.json").read_text(encoding="utf-8")
-    lib = Library.load(ROOT)
-    for c in lib.constructs.values():
-        assert (site / "constructs" / c["pid"] / "index.html").exists()
+def test_one_address_per_record(site):
+    """Pages and data files live at the persistent identifier only: no name-based copies."""
+    assert (site / "instruments" / "hmi0004" / "index.html").is_file()
+    assert not (site / "instruments" / "gci").exists()
+    assert (site / "data" / "instruments" / "hmi0004.json").is_file()
+    assert not (site / "data" / "instruments" / "gci.json").exists()
+    assert (site / "data" / "items" / "hmi0004" / "hmi0004.1.json").is_file()
+    assert not (site / "constructs" / "self-efficacy").exists()
 
 
 def test_item_crosswalk_shows_possible_and_confirmed_links():

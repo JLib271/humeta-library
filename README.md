@@ -103,7 +103,7 @@ it in the [HuMeta profile](https://github.com/JLib271/humeta-profile/issues/new/
 rather than adding it to the library.
 
 **DataCite.** Each instrument record is also published as DataCite 4.7 metadata
-([`oem/instrument_metadata.py`](https://github.com/JLib271/HuMeta/blob/main/oem/instrument_metadata.py) in the portal; `data/datacite/<id>.json` on the Library
+([`oem/instrument_metadata.py`](https://github.com/JLib271/HuMeta/blob/main/oem/instrument_metadata.py) in the portal; `data/datacite/<pid>.json` on the Library
 website), and its Library page embeds a schema.org description. The instrument
 is typed `Text` with resource type "Research instrument: ..." (the STEMEd+ Commons Library files
 instruments as Text document > Other; DataCite's `Instrument` type is meant for

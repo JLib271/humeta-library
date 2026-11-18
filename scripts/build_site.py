@@ -251,9 +251,13 @@ class Site:
         self.today = date.today().isoformat()
 
     # ---------- urls (relative to the site root)
-    @staticmethod
-    def url(kind: str, rid: str) -> str:
-        return f"{kind}/{slug(rid)}/"
+    def url(self, kind: str, rid: str) -> str:
+        """A record's page. Instruments, constructs and frameworks live at their persistent identifier
+        (instruments/hmi0004/), so https://w3id.org/humeta/instrument/hmi0004 needs only one redirect."""
+        records = {"instruments": self.lib.instruments, "constructs": self.lib.constructs,
+                   "frameworks": self.lib.frameworks}.get(kind, {})
+        pid = (records.get(rid) or {}).get("pid")
+        return f"{kind}/{pid or slug(rid)}/"
 
     def disc(self, d: str) -> str:
         return self.disciplines.get(d) or label(d)
@@ -550,9 +554,10 @@ class Site:
         if inst.get("info_sources"):
             parts.append("<p><strong>Information drawn from:</strong></p><ul>"
                          + "".join(f"<li>{ext(u)}</li>" for u in inst["info_sources"]) + "</ul>")
-        parts.append(self.record_footer("instrument record", f"data/instruments/{iid}.json", root,
-                                         extra=(f' · <a href="{root}data/evidence/{iid}.json">Evidence (JSON)</a>' if ev else "")
-                                         + f' · <a href="{root}data/datacite/{iid}.json">DataCite metadata (JSON)</a>',
+        pid = inst["pid"]
+        parts.append(self.record_footer("instrument record", f"data/instruments/{pid}.json", root,
+                                         extra=(f' · <a href="{root}data/evidence/{pid}.json">Evidence (JSON)</a>' if ev else "")
+                                         + f' · <a href="{root}data/datacite/{pid}.json">DataCite metadata (JSON)</a>',
                                          name=title, page=self.url("instruments", iid)))
         ld = json.dumps(with_identifier(IM.to_schema_org(self.lib, iid, self.profile), persistent_uri(inst)),
                         ensure_ascii=False).replace("</", "<\\/")
@@ -667,7 +672,7 @@ class Site:
         src = (src_dir / rel).resolve()
         if not src.is_file() or src_dir.resolve() not in src.parents:
             return None
-        dest = self.out / "instruments" / slug(iid) / rel
+        dest = self.out / self.url("instruments", iid) / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         if not dest.exists():
             shutil.copyfile(src, dest)
@@ -1386,38 +1391,6 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
         return (f'<p class="dl">Download: <a href="{root}{data_path}">This {h(what.split()[0])} data (JSON)</a>{extra}</p>'
                 + self.recommend_note(what, name, page))
 
-    # ---------- persistent identifiers
-    def identified(self) -> list[tuple[str, dict, str]]:
-        """(type, record, page) for every record with an identifier."""
-        out = [("instrument", inst, self.url("instruments", iid)) for iid, inst in self.lib.instruments.items()]
-        out += [("framework", fw, self.url("frameworks", fid)) for fid, fw in self.lib.frameworks.items()
-                if fw.get("pid") and fw.get("kind") not in IDS.NO_IDENTIFIER_KINDS]
-        out += [("construct", c, self.url("constructs", cid)) for cid, c in self.lib.constructs.items()]
-        return out
-
-    def write_identifier_pages(self) -> None:
-        """A small page at each identifier's address (instruments/hmi0004/ and so on) that forwards to the record.
-
-        w3id.org redirects https://w3id.org/humeta/instrument/hmi0004 here, so the identifier works however the
-        record's page is named. Instrument records are also at data/instruments/<pid>.json, for clients that ask
-        the identifier for JSON."""
-        for kind, rec, page in self.identified():
-            if not rec.get("pid"):
-                continue
-            target = f"../../{page}"
-            stub = (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{h(rec["pid"])}</title>'
-                    f'<meta name="robots" content="noindex"><link rel="canonical" href="{h(LIBRARY_SITE_URL + page)}">'
-                    f'<meta http-equiv="refresh" content="0; url={h(target)}">'
-                    f'<script>location.replace({json.dumps(target)} + location.hash)</script></head>'
-                    f'<body><p><a href="{h(target)}">Go to the record for {h(persistent_uri(rec))}</a></p></body></html>')
-            dest = self.out / PID_FOLDERS[kind] / rec["pid"] / "index.html"
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(stub, encoding="utf-8")
-        for iid, inst in self.lib.instruments.items():
-            if inst.get("pid"):
-                shutil.copyfile(self.out / "data" / "instruments" / f"{iid}.json",
-                                self.out / "data" / "instruments" / f"{inst['pid']}.json")
-
     # ---------- data
     def write_archive(self, data: Path) -> None:
         """data/library.tar.gz: the library's own files under library/, for the HuMeta Portal to read.
@@ -1445,19 +1418,22 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
         (data / "instruments").mkdir(parents=True, exist_ok=True)
         (data / "evidence").mkdir(parents=True, exist_ok=True)
         for iid, inst in self.lib.instruments.items():
-            (data / "instruments" / f"{iid}.json").write_text(json.dumps(inst, indent=2, ensure_ascii=False), encoding="utf-8")
+            # Data files are named by persistent identifier, like the pages
+            (data / "instruments" / f"{inst['pid']}.json").write_text(json.dumps(inst, indent=2, ensure_ascii=False), encoding="utf-8")
             ev = self.lib.evidence_for(iid)
             if ev:
-                (data / "evidence" / f"{iid}.json").write_text(json.dumps(ev, indent=2, ensure_ascii=False), encoding="utf-8")
+                (data / "evidence" / f"{inst['pid']}.json").write_text(json.dumps(ev, indent=2, ensure_ascii=False), encoding="utf-8")
         (data / "datacite").mkdir(parents=True, exist_ok=True)
-        for iid in self.lib.instruments:
-            (data / "datacite" / f"{iid}.json").write_text(
+        for iid, inst in self.lib.instruments.items():
+            (data / "datacite" / f"{inst['pid']}.json").write_text(
                 json.dumps(with_alternate_identifier(IM.to_datacite_json(self.lib, iid, self.profile),
                                                      persistent_uri(self.lib.instruments[iid])), indent=2, ensure_ascii=False),
                 encoding="utf-8")
         for (iid, vid), rec in self.lib.item_files.items():
             clean = {k: v for k, v in rec.items() if not k.startswith("_")}
-            dest = data / "items" / iid / f"{vid}.json"
+            inst = self.lib.instruments.get(iid, {})
+            vpid = next((v["pid"] for v in inst.get("versions", []) if v["version_id"] == vid), vid)
+            dest = data / "items" / inst.get("pid", iid) / f"{vpid}.json"
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(json.dumps(clean, indent=2, ensure_ascii=False), encoding="utf-8")
         for name in ("frameworks.json", "constructs.json", "scales.json", "standard_variables.json"):
@@ -1571,7 +1547,6 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
                         '<h1>Page not found</h1><p>That record may have been renamed. '
                         f'<a href="{LIBRARY_SITE_URL}">Search the library</a>.</p>', depth=0)
         self.write_data()
-        self.write_identifier_pages()
         urls = "".join(f"<url><loc>{h(LIBRARY_SITE_URL + p)}</loc></url>" for p in self.pages)
         (self.out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',
