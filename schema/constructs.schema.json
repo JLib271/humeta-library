@@ -75,6 +75,18 @@
             },
             "description": "ERIC Thesaurus descriptors for the construct (see the HuMeta profile's crosswalks/eric_descriptor_status.json)."
           },
+          "retired": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["on", "by"],
+            "description": "The governance committee took this construct off the shared list. It is kept, never deleted, so studies that used its id still resolve; new studies should use replaced_by, if given.",
+            "properties": {
+              "on": { "type": "string", "format": "date" },
+              "by": { "type": "string", "description": "Who approved it (the committee chair)." },
+              "replaced_by": { "type": "string", "description": "The id of the construct to use instead." },
+              "review": { "type": "string", "format": "uri", "description": "The committee's review issue." }
+            }
+          },
           "naming": {
             "type": "object",
             "additionalProperties": false,
@@ -92,7 +104,9 @@
                 "enum": ["needs_check", "verified", "unresolved"],
                 "description": "needs_check: proposed, to be confirmed by the governance committee. verified: confirmed. unresolved: no authority term and no agreed first use yet; the label is provisional."
               },
-              "note": { "type": "string", "description": "Earlier precursors, scope differences, or candidates still to check." }
+              "note": { "type": "string", "description": "Earlier precursors, scope differences, or candidates still to check." },
+              "reviewed_by": { "type": "string", "description": "Who on the governance committee confirmed the name (governance/construct-names/<id>.yml)." },
+              "reviewed_on": { "type": "string", "format": "date", "description": "When the committee confirmed the name." }
             },
             "allOf": [
               { "if": { "properties": { "authority": { "enum": ["eric", "icpsr"] } } },

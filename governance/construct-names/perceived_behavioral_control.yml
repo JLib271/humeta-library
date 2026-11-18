@@ -1,0 +1,37 @@
+# Governance review of the name of the shared construct "Perceived behavioral control" (perceived_behavioral_control).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: perceived_behavioral_control
+  name: "Perceived behavioral control"
+  status: proposed
+  rule: "3. First published use"
+  source: >-
+    Ajzen, I. (1985). From intentions to actions: A theory of planned behavior. In J. Kuhl & J.
+    Beckmann (Eds.), Action control: From cognition to behavior (pp. 11-39). Springer.
+  year: 1985
+  link: "https://doi.org/10.1007/978-3-642-69746-3_2"
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. Introduced with the theory of
+    planned behavior; not part of the earlier theory of reasoned action.
+  other_names: >-
+    perceived control; control beliefs; control of learning beliefs
+  definition: >-
+    Perceived ease or difficulty of performing a behavior, including access to needed resources
+    (Theory of Planned Behavior).

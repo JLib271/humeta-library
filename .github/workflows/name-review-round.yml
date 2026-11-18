@@ -1,0 +1,42 @@
+name: Open a construct-name review round
+
+# A chair opens one review issue per construct not yet decided and not already under review.
+# See governance/README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deadline:
+        description: "Last day for votes (YYYY-MM-DD), normally two weeks from today"
+        required: true
+      constructs:
+        description: "Construct ids to include, separated by spaces (blank: all not yet decided)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Open the review issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEADLINE: ${{ github.event.inputs.deadline }}
+          CONSTRUCTS: ${{ github.event.inputs.constructs }}
+        run: python scripts/naming_votes.py open --deadline "$DEADLINE" --constructs $CONSTRUCTS
+      - name: Show the tallies
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/naming_votes.py tally

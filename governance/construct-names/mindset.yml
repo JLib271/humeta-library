@@ -1,0 +1,38 @@
+# Governance review of the name of the shared construct "Implicit theories of intelligence" (mindset).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: mindset
+  name: "Implicit theories of intelligence"
+  status: proposed
+  rule: "3. First published use"
+  source: >-
+    Dweck, C. S., & Leggett, E. L. (1988). A social-cognitive approach to motivation and
+    personality. Psychological Review, 95(2), 256-273.
+  year: 1988
+  link: "https://doi.org/10.1037/0033-295X.95.2.256"
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. 'Mindset' is a later popular name
+    (kept as a synonym). The 1988 paper cites earlier studies on implicit theories (Bandura & Dweck,
+    1985); check for an earlier first use.
+  other_names: >-
+    Mindset / beliefs about ability; growth mindset; fixed mindset; lay theories; brilliance beliefs
+  definition: >-
+    Beliefs about whether ability in a domain is fixed or can be developed, and about who can
+    succeed.

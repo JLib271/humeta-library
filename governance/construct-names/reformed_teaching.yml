@@ -1,0 +1,41 @@
+# Governance review of the name of the shared construct "Reformed teaching" (reformed_teaching).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: reformed_teaching
+  name: "Reformed teaching"
+  status: proposed
+  rule: "3. First published use"
+  source: >-
+    Piburn, M., Sawada, D., Turley, J., Falconer, K., Benford, R., Bloom, I., & Judson, E. (2000).
+    Reformed Teaching Observation Protocol (RTOP) reference manual (ACEPT Technical Report No.
+    IN00-3). Arizona Collaborative for Excellence in the Preparation of Teachers.
+  year: 2000
+  link: "https://eric.ed.gov/?id=ED447205"
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. ERIC 'Student Centered Learning' is
+    an approach, not this construct. The journal article followed in 2002 (Sawada et al., School
+    Science and Mathematics, doi:10.1111/j.1949-8594.2002.tb17883.x). 'Reform' teaching was
+    discussed earlier in 1990s standards documents; check.
+  other_names: >-
+    Reformed / student-centered teaching; student-centered instruction; inquiry-based instruction;
+    evidence-based instructional practices; EBIPs
+  definition: >-
+    Degree to which instruction is inquiry-oriented and student-centered rather than
+    transmission-oriented.

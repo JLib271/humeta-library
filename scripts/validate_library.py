@@ -335,6 +335,19 @@ def main(library: Path, vocabularies: str | None = None) -> int:
             if short and short not in license_text:
                 problems.append(f"instruments/{iid}.json: item text license '{lic}' is not listed in LICENSE.md")
 
+    # Retired constructs point to a construct that is still in use
+    constructs_doc = load(library / "constructs.json")
+    all_constructs = {c["id"]: c for c in constructs_doc.get("constructs", [])}
+    for cid, c in all_constructs.items():
+        rep = (c.get("retired") or {}).get("replaced_by")
+        if rep and (rep not in all_constructs or all_constructs[rep].get("retired")):
+            problems.append(f"constructs.json: {cid} is replaced_by '{rep}', which is not a construct in use")
+
+    # The governance committee's construct-name reviews
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import naming_review
+    problems += naming_review.problems(library)
+
     if problems:
         print(f"Library validation failed with {len(problems)} problem(s):")
         for p in problems:

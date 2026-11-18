@@ -295,6 +295,16 @@ a draft for now; the governance committee removes the mark once it is reviewed.
 Frameworks are recorded in a study's HuMeta profile
 (`study.design.frameworks`).
 
+## Who decides construct names
+
+The HuMeta governance committee ([`governance/committee.yml`](governance/committee.yml)) decides
+each shared construct's official name, asynchronously in GitHub issues: one issue per construct
+(label `name-review`), votes by comment (`/vote confirm`, `/vote rename`, `/vote reject`,
+`/vote research_more`), lazy consensus at a deadline, and a chair's `/approve`. Approved decisions,
+with every member's vote, are written to `governance/construct-names/<id>.yml` and
+`constructs.json` in a pull request. A rejected construct is retired (`retired`, with
+`replaced_by`), never deleted. See [`governance/README.md`](governance/README.md).
+
 ## Who decides which instruments measure which constructs
 
 An instrument record's `construct_ids` (and each dimension's `construct_ids`)

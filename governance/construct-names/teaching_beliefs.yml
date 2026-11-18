@@ -1,0 +1,36 @@
+# Governance review of the name of the shared construct "Instructor beliefs about teaching" (teaching_beliefs).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: teaching_beliefs
+  name: "Instructor beliefs about teaching"
+  status: unresolved
+  rule: "not found yet"
+  source: ""
+  year: ""
+  link: ""
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. Candidate defining source, not first
+    use: Pajares, M. F. (1992). Teachers' beliefs and educational research: Cleaning up a messy
+    construct. Review of Educational Research, 62(3), 307-332, doi:10.3102/00346543062003307 (it
+    reviews earlier work).
+  other_names: >-
+    teaching philosophy; pedagogical beliefs; approaches to teaching
+  definition: >-
+    Instructors' beliefs about how students learn and what effective teaching looks like.
