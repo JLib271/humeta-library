@@ -284,3 +284,8 @@ def test_search_index_has_identifiers_developers_and_codes(site):
     assert gci["url"] == "instruments/hmi0004/"
     assert "Libarkin" in gci["text"] and "Libarkin2005V4" in gci["text"]
     assert {r["pid"] for r in records if r["type"] == "construct"} >= {"hmc0024"}
+
+
+def test_about_page_credits_the_standards_humeta_builds_on(site):
+    about = (site / "about" / "index.html").read_text(encoding="utf-8")
+    assert 'id="standards"' in about and "DataCite Metadata Schema 4.7" in about and "NEON" in about

@@ -57,6 +57,10 @@ from oem import evidence as EV  # noqa: E402
 from oem import instrument_metadata as IM  # noqa: E402
 from oem.library import Library  # noqa: E402
 from oem.vocab import PORTAL_URL  # noqa: E402
+try:  # the credited standards (HuMeta's oem/standards.py); older HuMeta checkouts have none
+    from oem import standards as STD  # noqa: E402
+except ImportError:  # pragma: no cover
+    STD = None
 from library_archive import DATA_DIRS, DATA_FILES, build_archive  # noqa: E402,F401
 import identifiers as IDS  # noqa: E402
 
@@ -1276,6 +1280,7 @@ class Site:
                  f'The record format is published as JSON Schemas in the {ext(REPO_URL + "/tree/main/schema", "library schema folder")}.</p>',
                  f'<h2>Contribute</h2><p><a href="{root}recommend/">Recommend an instrument</a> that is missing, or use the '
                  '"Suggest a correction" link at the bottom of any record. Suggestions are reviewed before they are added.</p>',
+                 self.standards_section(),
                  '<h2 id="identifiers">Persistent identifiers</h2><p>Every instrument, version, item, construct, and theory '
                  'has a persistent identifier such as <code>https://w3id.org/humeta/instrument/hmi0004</code>, shown at the top '
                  'of its page with a citation to copy. Identifiers carry no meaning, are never reassigned or deleted, and keep '
@@ -1369,6 +1374,20 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
         head = "".join(f'<th scope="col">{h(x)}</th>' for x in headers)
         body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
         return f'<div class="tbl {cls}"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
+
+    @staticmethod
+    def standards_section() -> str:
+        """The standards and practices HuMeta builds on, the same list as the HuMeta Portal's About page."""
+        if STD is None:
+            return ""
+        out = ['<h2 id="standards">Standards and practices HuMeta builds on</h2><p>HuMeta reuses existing standards '
+               'wherever it can. Each is credited here with where HuMeta uses it; the same list is on the HuMeta '
+               'Portal\'s About page.</p>']
+        for group, items in STD.grouped():
+            rows = "".join(f'<tr><td>{ext(e["url"], e["name"])}</td><td>{h(e["use"])}</td></tr>' for e in items)
+            out.append(f'<h3>{h(group)}</h3><table class="standards"><thead><tr><th>Standard</th><th>How HuMeta uses it</th></tr></thead>'
+                       f'<tbody>{rows}</tbody></table>')
+        return "".join(out)
 
     def identity(self, rec: dict, name: str, code: str | None = None) -> str:
         """The record's persistent identifier, prominently, with a citation to copy (McMurry et al. 2017, lesson 8).

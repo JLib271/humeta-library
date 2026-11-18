@@ -113,3 +113,4 @@ header nav a.navbtn { font-weight: 600; }
 .pid .citation { margin: 6px 0; }
 .retired { padding: 10px 12px; border-left: 4px solid #a33; background: #fbeeee; border-radius: 4px; }
 a.ext::after { content: " \2197"; font-size: .8em; }
+.standards { table-layout: fixed; width: 100%; } .standards th:first-child { width: 42%; }
