@@ -1,0 +1,40 @@
+name: Name review weekly digest
+
+# Every Monday morning (8:23 Eastern Standard Time, 9:23 in summer), one comment on the
+# "Construct name review: progress" issue that mentions every committee member: what each still needs
+# to vote on, what needs discussion, and what waits for a chair's approval. GitHub emails each person
+# mentioned. Nothing is posted when no construct is under review. See governance/README.md.
+
+on:
+  schedule:
+    - cron: "23 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: name-review
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Update the tallies
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/naming_votes.py tally
+      - name: Post the digest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/naming_votes.py digest

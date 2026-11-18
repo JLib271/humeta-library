@@ -1,7 +1,8 @@
 name: Name review tally
 
 # Keeps the tally of every construct-name review issue up to date: when someone comments on or edits
-# a review issue, and once a day (for deadlines). Reads comments as data only; nothing in them runs.
+# a review issue, and once a day (for deadlines). The daily run also reminds members who have not
+# voted, 3 days before an issue's deadline. Reads comments as data only; nothing in them runs.
 # See governance/README.md.
 
 on:
@@ -40,3 +41,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/naming_votes.py tally
+      - name: Remind members 3 days before a deadline
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/naming_votes.py remind

@@ -97,6 +97,9 @@ class FakeGitHub:
             issue["labels"] = [{"name": x} for x in fields["labels"]]
         return issue
 
+    def add_comment(self, number, body):
+        self.comment(number, "github-actions[bot]", body)
+
     def comment(self, number, login, body):
         lst = self.comment_list.setdefault(number, [])
         lst.append({"user": {"login": login}, "body": body, "created_at": f"2026-12-01T00:00:{len(lst):02d}Z",
@@ -175,3 +178,31 @@ def test_every_construct_has_a_review_file():
     assert files == ids
     for p in (ROOT / "governance" / "construct-names").glob("*.yml"):
         assert yaml.safe_load(p.read_text())["proposed"]["construct_id"] == p.stem
+
+
+def test_reminders_and_weekly_digest(library):
+    gh = FakeGitHub()
+    V.open_round(gh, library, DEADLINE, ["self_efficacy", "interest", "anxiety"])
+    V.update_all(gh, library, TODAY)
+    se, it = number_of(gh, "self_efficacy"), number_of(gh, "interest")
+    for who in ("chair", "ana", "raj"):
+        gh.comment(se, who, "/vote confirm")
+    gh.comment(it, "ana", "/vote confirm")
+    gh.comment(it, "raj", "/vote reject")
+    three_days_before = DEADLINE - dt.timedelta(days=3)
+    assert V.remind(gh, library, TODAY) == []  # not due yet
+    sent = V.remind(gh, library, three_days_before)
+    assert f"#{se}" not in sent and f"#{it}" in sent  # everyone voted on Self Efficacy
+    reminder = gh.comments(it)[-1]["body"]
+    assert "@chair" in reminder and "@ana" not in reminder and "2026-12-10" in reminder
+    assert V.remind(gh, library, three_days_before) == []  # once per deadline
+    progress = gh.issues(V.PROGRESS_LABEL)[0]["number"]
+    assert V.digest(gh, library, TODAY)
+    text = gh.comments(progress)[-1]["body"]
+    assert "3 under review" in text and "1 need discussion" in text and "1 waiting for approval" in text
+    assert "- @ana: please vote on [Academic anxiety]" in text and "@raj" in text and "@chair" in text
+    assert "Interest" in text.split("### Needs discussion")[1]
+    assert "Self Efficacy" in text.split("Waiting for a chair")[1]
+    for i in gh.issue_list:  # nothing under review: no digest
+        i["state"] = "closed"
+    assert not V.digest(gh, library, TODAY)

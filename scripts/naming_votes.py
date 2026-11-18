@@ -19,7 +19,12 @@ into governance/construct-names/<id>.yml and constructs.json in a pull request.
 
   python scripts/naming_votes.py open --deadline 2026-12-15 [--constructs id ...]
   python scripts/naming_votes.py tally
+  python scripts/naming_votes.py remind      # 3 days before a deadline: mention members who have not voted
+  python scripts/naming_votes.py digest      # weekly: one comment on the progress issue mentioning every member
   python scripts/naming_votes.py apply
+
+GitHub emails people when a comment mentions them, so the digest and reminders reach members by email
+(with GitHub's default notification settings).
 
 open, tally and apply call the GitHub API with GITHUB_TOKEN for GITHUB_REPOSITORY.
 """
@@ -56,6 +61,8 @@ APPROVE_RE = re.compile(r"^\s*/approve\b", re.I | re.M)
 DEADLINE_RE = re.compile(r"^\*\*Deadline:\*\*\s*(\d{4}-\d{2}-\d{2})", re.M)
 CONSTRUCT_RE = re.compile(r"<!-- construct: ([a-z0-9_]+) -->")
 TALLY_START, TALLY_END = "<!-- humeta-tally -->", "<!-- /humeta-tally -->"
+REMINDER_MARK, DIGEST_MARK = "<!-- humeta-reminder -->", "<!-- humeta-digest -->"
+REMIND_DAYS = 3
 
 
 # ---------------------------------------------------------------- votes and consensus
@@ -300,6 +307,9 @@ class GitHub:
     def update_issue(self, number: int, **fields) -> dict:
         return self.call("PATCH", f"/issues/{number}", fields)
 
+    def add_comment(self, number: int, body: str) -> dict:
+        return self.call("POST", f"/issues/{number}/comments", {"body": body})
+
 
 def _labels(issue: dict) -> set[str]:
     return {lbl["name"] for lbl in issue.get("labels") or []}
@@ -370,6 +380,92 @@ def progress_issue(gh, rows: list[dict], reviews: dict) -> None:
         gh.create_issue("Construct name review: progress", body, [PROGRESS_LABEL])
 
 
+def review_states(gh, root: Path, today: dt.date) -> list[dict]:
+    """Every open review issue with its construct, deadline, votes, and tally."""
+    people = load_committee(root)
+    reviews = NR.load_reviews(root)
+    out = []
+    for issue in gh.issues(LABEL):
+        m = CONSTRUCT_RE.search(issue.get("body") or "")
+        if not m or m.group(1) not in reviews or APPLIED_LABEL in _labels(issue):
+            continue
+        cid = m.group(1)
+        proposed = reviews[cid]["proposed"].get("status") == "proposed"
+        comments = gh.comments(issue["number"])
+        info = read_issue(issue, comments, people, today, proposed)
+        out.append({"issue": issue, "construct": cid, "name": reviews[cid]["proposed"]["name"],
+                    "comments": comments, **info})
+    return out
+
+
+def _link(r: dict) -> str:
+    return f"[{r['name']}]({r['issue'].get('html_url', '')}) (#{r['issue']['number']})"
+
+
+def remind(gh, root: Path, today: dt.date) -> list[str]:
+    """3 days before an issue's deadline, mention the members who have not voted on it (once per deadline)."""
+    people = load_committee(root)
+    sent = []
+    for r in review_states(gh, root, today):
+        if not r["deadline"] or (r["deadline"] - today).days != REMIND_DAYS:
+            continue
+        if r["status"]["state"] == "consensus" and set(people) <= set(r["votes"]):
+            continue
+        mark = f"{REMINDER_MARK[:-4]} {r['deadline'].isoformat()} -->"
+        if any(mark in (c.get("body") or "") for c in r["comments"]):
+            continue
+        missing = sorted(login for login in people if login not in r["votes"])
+        if not missing:
+            continue
+        gh.add_comment(r["issue"]["number"], f"{mark}\n**Reminder:** voting on this construct name closes on "
+                       f"{r['deadline'].isoformat()} ({REMIND_DAYS} days). Not voted yet: "
+                       + ", ".join(f"@{login}" for login in missing)
+                       + ". Comment `/vote confirm`, `/vote rename`, `/vote reject`, or `/vote research_more` "
+                       "(how: the top of this issue). With no objection by the deadline, the proposed name stands.")
+        sent.append(f"#{r['issue']['number']}")
+    return sent
+
+
+def digest_text(states: list[dict], people: dict, today: dt.date) -> str | None:
+    """The weekly digest: what each member still needs to vote on, what needs discussion, what awaits approval."""
+    if not states:
+        return None
+    pending = {login: [r for r in states if login not in r["votes"] and r["status"]["state"] != "consensus"]
+               for login in people}
+    discuss = [r for r in states if r["status"]["state"] in ("needs_discussion", "no_proposal")]
+    to_approve = [r for r in states if r["status"]["state"] == "consensus" and not r["approved_by"]]
+    chairs = [f"@{login}" for login, p in people.items() if p["chair"]]
+    lines = [DIGEST_MARK, f"## Construct name review: week of {today.isoformat()}", "",
+             f"{len(states)} under review · {len(discuss)} need discussion · {len(to_approve)} waiting for approval.", "",
+             "### Your votes"]
+    for login, person in sorted(people.items(), key=lambda kv: kv[1]["name"].lower()):
+        items = sorted(pending[login], key=lambda r: (r["deadline"] or dt.date.max, r["name"].lower()))
+        if items:
+            lines.append(f"- @{login}: please vote on " + "; ".join(
+                _link(r) + (f", by {r['deadline'].isoformat()}" if r["deadline"] else "") for r in items))
+        else:
+            lines.append(f"- @{login}: all caught up, thank you.")
+    if discuss:
+        lines += ["", "### Needs discussion"] + [f"- {_link(r)}: {r['status']['reason']}" for r in discuss]
+    if to_approve:
+        lines += ["", f"### Waiting for a chair's `/approve` ({', '.join(chairs)})"] + [
+            f"- {_link(r)}: {describe(r['status']['outcome'])}" for r in to_approve]
+    lines += ["", "With no objection by an issue's deadline, its proposed name stands. How to vote: "
+              "governance/README.md in the library repository."]
+    return "\n".join(lines)
+
+
+def digest(gh, root: Path, today: dt.date) -> bool:
+    """Post the weekly digest on the progress issue (one comment that mentions every member)."""
+    people = load_committee(root)
+    text = digest_text(review_states(gh, root, today), people, today)
+    progress = gh.issues(PROGRESS_LABEL)
+    if not text or not progress:
+        return False
+    gh.add_comment(progress[0]["number"], text)
+    return True
+
+
 def apply_approved(gh, root: Path, today: dt.date) -> list[dict]:
     """Write approved decisions into the review files and constructs.json; return what was applied."""
     people = load_committee(root)
@@ -410,7 +506,7 @@ def apply_approved(gh, root: Path, today: dt.date) -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Construct-name review by the governance committee, in GitHub issues.")
-    ap.add_argument("command", choices=["open", "tally", "apply"])
+    ap.add_argument("command", choices=["open", "tally", "remind", "digest", "apply"])
     ap.add_argument("--deadline", help="open: last day for votes, YYYY-MM-DD")
     ap.add_argument("--constructs", nargs="*", help="open: only these construct ids")
     ap.add_argument("--library", type=Path, default=ROOT)
@@ -434,6 +530,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "tally":
         rows = update_all(gh, args.library, today)
         print(f"Updated {len(rows)} review issue(s).")
+        return 0
+    if args.command == "remind":
+        sent = remind(gh, args.library, today)
+        print("Reminders: " + (", ".join(sent) if sent else "none due"))
+        return 0
+    if args.command == "digest":
+        print("Digest posted." if digest(gh, args.library, today) else "Nothing under review: no digest.")
         return 0
     applied = apply_approved(gh, args.library, today)
     if args.summary:

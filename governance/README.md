@@ -48,12 +48,27 @@ You need a free GitHub account, listed in [`committee.yml`](committee.yml).
 The tally in each issue, and its label (*awaiting votes*, *needs discussion*, *consensus*,
 *approved*, *applied*), update whenever someone comments and once a day.
 
+## Emails
+
+- **Weekly digest, every Monday morning** (about 8:30 Eastern): one comment on the progress issue
+  that mentions every member, listing the constructs each still needs to vote on, those that need
+  discussion, and those waiting for a chair's approval. Nothing is sent when no round is open.
+- **Reminder 3 days before a deadline**, on that construct's issue, mentioning only the members
+  who have not voted on it.
+
+GitHub emails you when you are mentioned. Keep email notifications on in your GitHub settings
+(Settings → Notifications; on by default). Replying to the email posts a comment on the issue, so
+you can vote by email: reply with `/vote confirm` (or another vote) as the first line.
+
 ## For the chair
 
 - **Start a round:** Actions → **Open a construct-name review round** → give the deadline
   (YYYY-MM-DD) and, optionally, the construct ids to include (default: every construct not yet
   decided and not already under review). One issue is opened per construct.
-- **Add or remove members:** edit `committee.yml` in a pull request.
+- **Add or remove members:** on GitHub, open `committee.yml`, click the pencil, add two lines under
+  `members:` (`- name: Full Name` and `  github: username`), and commit through a pull request. Their
+  votes count from then on, on open issues too, and they get the next weekly digest.
+- **Send the digest now:** Actions → **Name review weekly digest** → Run workflow.
 - **Apply decisions:** comment `/approve` on each issue with consensus, then run **Apply
   construct-name decisions**. Review and merge its pull request. If a pull request is closed without
   merging, remove the *applied* label from its issues.
