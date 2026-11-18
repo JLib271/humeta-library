@@ -1,0 +1,28 @@
+# HuMeta: persistent identifiers for the HuMeta Instrument Library
+# (instruments and their versions, constructs, theories and frameworks) and the
+# HuMeta metadata-code scheme (Construct_Measure_Item_Target).
+#
+# Project:  HuMeta, part of STEMEd+ Commons
+# Website:  https://jlib271.github.io/humeta-library/
+# Source:   https://github.com/JLib271/humeta-library
+# Contact:  Julie C. Libarkin, Michigan State University (GitHub: JLib271)
+#
+# Identifiers:
+#   https://w3id.org/humeta/instrument/<id>              an instrument
+#   https://w3id.org/humeta/instrument/<id>/<version>    one version of it
+#   https://w3id.org/humeta/instrument/<id>.json         its library record (JSON)
+#   https://w3id.org/humeta/construct/<id>               a shared construct
+#   https://w3id.org/humeta/framework/<id>               a theory or framework
+#   https://w3id.org/humeta/metadata-code                the metadata-code scheme
+# Ids are the library's record ids with "_" written as "-".
+
+Options +FollowSymLinks
+RewriteEngine on
+
+RewriteRule ^instrument/([a-z0-9-]+)\.json$ https://jlib271.github.io/humeta-library/data/instruments/$1.json [R=302,L]
+RewriteRule ^instrument/([a-z0-9-]+)/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#versions [R=302,NE,L]
+RewriteRule ^instrument/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/ [R=302,L]
+RewriteRule ^construct/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/constructs/$1/ [R=302,L]
+RewriteRule ^framework/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/frameworks/$1/ [R=302,L]
+RewriteRule ^metadata-code/?$ https://github.com/JLib271/humeta-library#metadata-codes [R=302,NE,L]
+RewriteRule ^$ https://jlib271.github.io/humeta-library/ [R=302,L]

@@ -78,6 +78,7 @@
   "versions": [
     {
       "version_id": "class-phys-v3",
+      "code": "PhysV3",
       "label": "Physics, version 3",
       "language": "en",
       "discipline_adaptation": "physics",
@@ -100,6 +101,7 @@
     },
     {
       "version_id": "class-chem",
+      "code": "Chem",
       "label": "Chemistry",
       "language": "en",
       "discipline_adaptation": "chemistry",

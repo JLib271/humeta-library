@@ -68,6 +68,14 @@ DATA_DIRS = ("instruments", "items", "evidence", "schema")
 DATA_FILES = ("constructs.json", "frameworks.json", "scales.json", "standard_variables.json",
               "evidence_rubric.json", "LICENSE.md")
 COMMONS_URL = "https://stemedplus.hcommons.org/"
+#: Persistent identifiers (w3id.org): https://w3id.org/humeta/<kind>/<slug>, redirected to this website by
+#: w3id/ids/humeta/.htaccess. They stay the same if the website moves; only the redirect changes.
+PERSISTENT_BASE = "https://w3id.org/humeta/"
+
+
+def persistent_uri(kind: str, record_id: str, version_id: str | None = None) -> str:
+    """Persistent identifier of a library record. ``kind``: instrument, construct or framework."""
+    return f"{PERSISTENT_BASE}{kind}/{slug(record_id)}" + (f"/{version_id}" if version_id else "")
 COLLECTION_URL = "https://works.hcommons.org/collections/humetainstrumentlibrary/"
 STEMEDPLUS_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus/"
 KCWORKS_UPLOAD_URL = "https://works.hcommons.org/uploads/new"
@@ -195,6 +203,19 @@ def status_tag(status: str | None) -> str:
 
 
 # ---------------------------------------------------------------- site
+
+def with_identifier(ld: dict, uri: str) -> dict:
+    """schema.org description with the record's persistent identifier as its @id and first identifier."""
+    ids = ld.get("identifier") or []
+    ids = ids if isinstance(ids, list) else [ids]
+    return {**ld, "@id": uri, "identifier": [uri, *[i for i in ids if i != uri]]}
+
+
+def with_alternate_identifier(dc: dict, uri: str) -> dict:
+    """DataCite metadata with the record's persistent identifier as an alternate identifier (type URL)."""
+    alts = [a for a in dc.get("alternateIdentifiers") or [] if a.get("alternateIdentifier") != uri]
+    return {**dc, "alternateIdentifiers": [{"alternateIdentifier": uri, "alternateIdentifierType": "URL"}, *alts]}
+
 class Site:
     def __init__(self, lib: Library, out: Path, vocab: dict[str, dict[str, str]], datasets: dict | None = None,
                  studies: dict | None = None):
@@ -332,7 +353,8 @@ class Site:
         parts = [f'<p class="crumb"><a href="{root}#instrument">Instruments</a></p>',
                  f'<h1>{h(title)}</h1>',
                  f'<div class="tags"><span class="tag k">{h(label(inst.get("instrument_type")))}</span>{status_tag(review.get("status"))}</div>',
-                 f'<p class="lead">{h(inst.get("description"))}</p>']
+                 f'<p class="lead">{h(inst.get("description"))}</p>',
+                 self.identity(persistent_uri("instrument", iid), inst.get("metadata_code"))]
 
         method = IM.DATA_COLLECTION_METHOD.get(inst.get("instrument_type"))
         facts = [("Gathers data about", ", ".join(self.term("participant_role", r) for r in inst.get("participants", []))),
@@ -422,7 +444,9 @@ class Site:
                 if v.get("form_type") == "item_bank" and v.get("subtest_length"):
                     items = f"{items} in the pool; subtests of {v['subtest_length']}"
                 cite = v.get("citation") or {}
-                rows.append([h(v.get("label")), h(v.get("language")), h(v.get("year")), h(items),
+                vuri = persistent_uri("instrument", iid, v["version_id"])
+                rows.append([h(v.get("label")) + f'<br><span class="note"><code>{h((inst.get("metadata_code") or "") + (v.get("code") or ""))}</code> · '
+                             f'<a href="{h(vuri)}">{h(vuri)}</a></span>', h(v.get("language")), h(v.get("year")), h(items),
                              h(label(v.get("form_type")) if v.get("form_type") else ""),
                              h(fmt), h(scoring), h(v.get("administration_minutes")),
                              h(cite.get("text")) + doi_link(cite.get("doi"))])
@@ -512,7 +536,8 @@ class Site:
                                          extra=(f' · <a href="{root}data/evidence/{iid}.json">Evidence (JSON)</a>' if ev else "")
                                          + f' · <a href="{root}data/datacite/{iid}.json">DataCite metadata (JSON)</a>',
                                          name=title, page=self.url("instruments", iid)))
-        ld = json.dumps(IM.to_schema_org(self.lib, iid, self.profile), ensure_ascii=False).replace("</", "<\\/")
+        ld = json.dumps(with_identifier(IM.to_schema_org(self.lib, iid, self.profile), persistent_uri("instrument", iid)),
+                        ensure_ascii=False).replace("</", "<\\/")
         parts.append(f'<script type="application/ld+json">{ld}</script>')
         self.write_page(self.url("instruments", iid), title, "\n".join(parts), inst.get("description", ""))
 
@@ -787,7 +812,8 @@ class Site:
                  '<div class="tags">' + f'<span class="tag k">{h(label(fw.get("kind")))}</span>'
                  + "".join(f'<span class="tag k">{h(label(f))}</span>' for f in fw.get("fields", []))
                  + status_tag(fw.get("status")) + "</div>",
-                 f'<p class="lead">{h(fw.get("description"))}</p>']
+                 f'<p class="lead">{h(fw.get("description"))}</p>',
+                 self.identity(persistent_uri("framework", fid))]
         if fw.get("status") == "draft":
             parts.append('<p class="note">Draft: the description, constructs, relationships, and links to shared constructs '
                          'still need review by experts in the field.</p>')
@@ -864,7 +890,8 @@ class Site:
         parts = [f'<p class="crumb"><a href="{root}#construct">Constructs</a></p>',
                  f'<h1>{h(c["label"])}</h1>',
                  f'<div class="tags"><span class="tag k">{h(label(c.get("domain")))}</span></div>',
-                 f'<p class="lead">{h(c.get("definition"))}</p>']
+                 f'<p class="lead">{h(c.get("definition"))}</p>',
+                 self.identity(persistent_uri("construct", cid))]
         facts = [("Official name", self.naming_text(c))] if c.get("naming") else []
         if c.get("synonyms"):
             facts.append(("Also called", ", ".join(c["synonyms"])))
@@ -1262,6 +1289,12 @@ class Site:
         body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
         return f'<div class="tbl {cls}"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
+    @staticmethod
+    def identity(uri: str, code: str | None = None) -> str:
+        """The record's persistent identifier (and, for instruments, its metadata code), under the lead."""
+        return (f'<p class="pid">Persistent identifier: <a href="{h(uri)}"><code>{h(uri)}</code></a>'
+                + (f' · HuMeta metadata code: <code>{h(code)}</code>' if code else "") + "</p>")
+
     def record_footer(self, what: str, data_path: str, root: str, extra: str = "", name: str = "", page: str = "") -> str:
         return (f'<p class="dl">Download: <a href="{root}{data_path}">This {h(what.split()[0])} data (JSON)</a>{extra}</p>'
                 + self.recommend_note(what, name, page))
@@ -1312,7 +1345,9 @@ class Site:
         (data / "datacite").mkdir(parents=True, exist_ok=True)
         for iid in self.lib.instruments:
             (data / "datacite" / f"{iid}.json").write_text(
-                json.dumps(IM.to_datacite_json(self.lib, iid, self.profile), indent=2, ensure_ascii=False), encoding="utf-8")
+                json.dumps(with_alternate_identifier(IM.to_datacite_json(self.lib, iid, self.profile),
+                                                     persistent_uri("instrument", iid)), indent=2, ensure_ascii=False),
+                encoding="utf-8")
         for (iid, vid), rec in self.lib.item_files.items():
             clean = {k: v for k, v in rec.items() if not k.startswith("_")}
             dest = data / "items" / iid / f"{vid}.json"

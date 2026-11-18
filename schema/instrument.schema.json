@@ -480,6 +480,7 @@
       "additionalProperties": false,
       "required": [
         "version_id",
+        "code",
         "label",
         "language",
         "response_format",
@@ -489,6 +490,11 @@
         "version_id": {
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]{0,11}$",
+          "description": "Fixed version part of HuMeta metadata codes, joined to the instrument's metadata_code: Libarkin2005 + V4 = Libarkin2005V4. Item numbers differ between versions, so codes for items always say which version. Unique within the instrument; never changes once published. Version codes start with a capital letter (V1, V4, PhysV3, Chem)."
         },
         "label": {
           "type": "string"

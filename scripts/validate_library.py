@@ -327,6 +327,9 @@ def main(library: Path, vocabularies: str | None = None) -> int:
     for code in sorted({c for c in codes if codes.count(c) > 1}):
         problems.append(f"metadata_code '{code}' is used by more than one instrument; add a letter (e.g. {code}a, {code}b)")
     for iid, inst in instruments.items():
+        vcodes = [v.get("code") for v in inst.get("versions", [])]
+        for code in sorted({c for c in vcodes if c and vcodes.count(c) > 1}):
+            problems.append(f"instruments/{iid}.json: version code '{code}' is used by more than one version")
         for rec in (inst.get("identifiers") or {}).get("records", []):
             if rec["registry"] == "psyctests" and not __import__("re").fullmatch(r"10\.1037/t\d{5}-\d{3}", rec.get("id") or ""):
                 problems.append(f"instruments/{iid}.json: PsycTests id must be its DOI, e.g. 10.1037/t22083-000")

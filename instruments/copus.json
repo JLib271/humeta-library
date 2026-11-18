@@ -80,6 +80,7 @@
   "versions": [
     {
       "version_id": "copus-v1",
+      "code": "V1",
       "label": "Version 1",
       "language": "en",
       "year": 2013,
