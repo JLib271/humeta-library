@@ -211,6 +211,9 @@ def apply(root: Path) -> list[str]:
             c["naming"] = naming
             changed.append(f"{c['id']}: {decision} -> {c['label']}")
     (root / "constructs.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    # A rejected construct keeps its persistent identifier, marked retired in identifiers.csv
+    import assign_identifiers
+    assign_identifiers.main(root)
     return changed
 
 

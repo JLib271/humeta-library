@@ -75,3 +75,33 @@
   type.addEventListener('change', render); field.addEventListener('change', render);
   render();
 })();
+
+// HuMeta Library: persistent identifiers and links (IDENTIFIERS.md; McMurry et al. 2017, lessons 8 and 10).
+(function () {
+  // Copy buttons for identifiers and citations
+  document.querySelectorAll('button.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var text = b.dataset.copy;
+      if (!text && b.dataset.copyFrom) {
+        var box = b.closest('details') || document;
+        var el = box.querySelector(b.dataset.copyFrom);
+        text = el ? el.textContent : '';
+      }
+      if (!text || !navigator.clipboard) return;
+      navigator.clipboard.writeText(text).then(function () {
+        var was = b.textContent; b.textContent = 'Copied';
+        setTimeout(function () { b.textContent = was; }, 1500);
+      });
+    });
+  });
+  // The access date in citations is the reader's today, not the day the site was built
+  var today = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var iso = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+  document.querySelectorAll('.citation .today').forEach(function (s) { s.textContent = iso; });
+  // Links that leave the library are marked and open in a new tab
+  document.querySelectorAll('main a[href^="http"]').forEach(function (a) {
+    if (a.host === location.host && a.pathname.indexOf('/humeta-library/') === 0) return;
+    a.classList.add('ext'); a.target = '_blank'; a.rel = 'noopener';
+    if (!a.title) a.title = 'Opens another site in a new tab';
+  });
+})();

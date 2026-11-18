@@ -32,7 +32,8 @@ The pull request lists a checklist. In short:
    text, confirm the license with them before adding items.
 4. **Add it to the library** in the same pull request, or in a follow-up
    pull request that references this one. Then run
-   `python scripts/validate_library.py`.
+   `python scripts/assign_identifiers.py` (new records get their persistent
+   identifiers) and `python scripts/validate_library.py`.
 5. **Merge or close.** Merging the suggestion file keeps a public record of
    who recommended what. If you close a recommendation, say why.
 

@@ -29,6 +29,11 @@
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
       "description": "Stable slug. Must match the file name. Never change after publishing."
     },
+    "pid": {
+      "type": "string",
+      "pattern": "^hmi[0-9]{4}$",
+      "description": "Persistent identifier, issued by scripts/assign_identifiers.py and recorded in identifiers.csv. Opaque, never changed, reassigned or deleted. See IDENTIFIERS.md. URI: https://w3id.org/humeta/instrument/<pid>."
+    },
     "name": {
       "type": "string",
       "minLength": 3
@@ -490,6 +495,11 @@
         "version_id": {
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "pid": {
+          "type": "string",
+          "pattern": "^hmi[0-9]{4}\\.[1-9][0-9]*$",
+          "description": "Persistent identifier of this version: the instrument's pid, a dot and HuMeta's version number (1 for the first version added, and so on; not the publisher's version name). See IDENTIFIERS.md."
         },
         "code": {
           "type": "string",

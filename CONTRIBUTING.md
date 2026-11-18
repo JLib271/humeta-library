@@ -24,13 +24,16 @@ record to the library in the same or a follow-up pull request.
 ## Editing records
 
 1. Copy an existing record as a template, and fill it from the primary publication (see the
-   [README](README.md#contributing)).
-2. Validate:
+   [README](README.md#contributing)). Delete the copied `pid` fields: a new record gets its own.
+2. Issue persistent identifiers to new records, then validate:
 
    ```bash
    pip install -r requirements.txt
+   python scripts/assign_identifiers.py
    python scripts/validate_library.py
    ```
+
+   Identifiers are never edited by hand, reused, or removed; see [IDENTIFIERS.md](IDENTIFIERS.md).
 
    The validator downloads the HuMeta profile's vocabularies to check terms such as disciplines.
    Offline, pass a local copy with `--vocabularies path/to/vocabularies.json`.

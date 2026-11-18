@@ -1,5 +1,6 @@
 {
   "id": "copus",
+  "pid": "hmi0003",
   "name": "Classroom Observation Protocol for Undergraduate STEM",
   "acronym": "COPUS",
   "developers": [
@@ -80,6 +81,7 @@
   "versions": [
     {
       "version_id": "copus-v1",
+      "pid": "hmi0003.1",
       "code": "V1",
       "label": "Version 1",
       "language": "en",

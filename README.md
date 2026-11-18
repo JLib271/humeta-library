@@ -64,6 +64,7 @@ evidence/<instrument-id>/<record-id>.json
 items/<instrument-id>/<version-id>.json
                              the items in one version: always a crosswalk,
                              plus item text only where permitted
+identifiers.csv              every persistent identifier ever issued (see IDENTIFIERS.md)
 scales.json, standard_variables.json, evidence_rubric.json
 schema/                      JSON Schemas for every record type
 suggestions/                 recommendations awaiting review (see suggestions/README.md)
@@ -73,6 +74,9 @@ scripts/fetch_datasets.py    reads the STEMEd+ Commons Library's Data and Studie
 scripts/check_recommendation.py, kcworks_lookup.py
                              check the STEMEd+ Commons Library deposit on a recommendation
 scripts/prepare_release.py   packages a release for archiving (see Releases)
+scripts/assign_identifiers.py
+                             issues persistent identifiers to new records
+scripts/check_links.py       checks the library's links to other sites (monthly)
 w3id/ids/humeta/.htaccess    the redirect rules behind the persistent identifiers
 site/assets/                 the website's styles, script, and logos
 ```
@@ -310,23 +314,29 @@ metadata codes still say which version was used.
 
 Every library record has a persistent identifier on
 [w3id.org](https://w3id.org/), which redirects to its page here. The
-identifiers stay the same if this website moves; only the redirect
-([`w3id/ids/humeta/.htaccess`](w3id/ids/humeta/.htaccess)) changes.
+identifiers carry no meaning (a type letter and a number), are never
+reassigned or deleted, and stay the same if this website moves; only the
+redirect ([`w3id/ids/humeta/.htaccess`](w3id/ids/humeta/.htaccess)) changes.
+The full policy, which follows McMurry et al. (2017), is in
+[`IDENTIFIERS.md`](IDENTIFIERS.md).
 
 | Record | Identifier |
 |---|---|
-| Instrument | `https://w3id.org/humeta/instrument/gci` |
-| One version of it | `https://w3id.org/humeta/instrument/gci/gci-v4-2014` |
-| One item (the same in every version that has it) | `https://w3id.org/humeta/instrument/gci/item/q05` |
-| Its record as JSON | `https://w3id.org/humeta/instrument/gci.json` |
-| Shared construct | `https://w3id.org/humeta/construct/self-efficacy` |
-| Theory or framework | `https://w3id.org/humeta/framework/sct` |
+| Instrument (here the GCI) | `https://w3id.org/humeta/instrument/hmi0004` |
+| One version of it (HuMeta's first GCI version, v.4) | `https://w3id.org/humeta/instrument/hmi0004.1` |
+| One item (the same in every version that has it) | `https://w3id.org/humeta/instrument/hmi0004/item/q05` |
+| Shared construct (self-efficacy) | `https://w3id.org/humeta/construct/hmc0024` |
+| Theory or framework (social cognitive theory) | `https://w3id.org/humeta/framework/hmf0038` |
 | Metadata-code scheme | `https://w3id.org/humeta/metadata-code` |
 
-Ids are the records' ids with `_` written as `-`. The instrument pages, their
+Each record's identifier is its `pid` field. Every identifier issued is listed
+in [`identifiers.csv`](identifiers.csv); when you add records, run
+`python scripts/assign_identifiers.py` to issue theirs. The record pages, their
 schema.org description (`@id`) and their DataCite metadata
 (`alternateIdentifiers`) carry the identifier; codebooks and DDI files from
-the HuMeta Portal use it to name instruments and constructs.
+the HuMeta Portal use it to name instruments, versions, items and constructs.
+An instrument identifier asked for `application/json` returns the record as
+JSON.
 
 ## Releases
 

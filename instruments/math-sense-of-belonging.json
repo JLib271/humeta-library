@@ -1,5 +1,6 @@
 {
   "id": "math-sense-of-belonging",
+  "pid": "hmi0005",
   "name": "Sense of Belonging to Math Scale",
   "developers": [
     {
@@ -53,6 +54,7 @@
   "versions": [
     {
       "version_id": "good-2012-en",
+      "pid": "hmi0005.1",
       "code": "V1",
       "label": "Original (Good, Rattan & Dweck, 2012)",
       "language": "en",

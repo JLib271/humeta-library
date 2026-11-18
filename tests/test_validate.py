@@ -73,8 +73,11 @@ def _second_version(root, links) -> None:
     """A made-up second GCI version in a copy of the library: its first item links to v4 items."""
     path = root / "instruments" / "gci.json"
     rec = json.loads(path.read_text(encoding="utf-8"))
-    rec["versions"].append({**rec["versions"][0], "version_id": "gci-test-v5", "code": "V5", "label": "Test version"})
+    new = {k: v for k, v in rec["versions"][0].items() if k != "pid"}
+    rec["versions"].append({**new, "version_id": "gci-test-v5", "code": "V5", "label": "Test version"})
     path.write_text(json.dumps(rec), encoding="utf-8")
+    import assign_identifiers
+    assign_identifiers.main(root, today="2026-11-18")  # the new version gets hmi0004.2
     items = [{"item_id": "q90", "number": "1", "response_type": "single_response", "derived_from": links},
              {"item_id": "q01", "number": "2", "response_type": "multiple_response"}]
     (root / "items" / "gci" / "gci-test-v5.json").write_text(

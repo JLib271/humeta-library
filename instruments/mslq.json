@@ -1,5 +1,6 @@
 {
   "id": "mslq",
+  "pid": "hmi0006",
   "name": "Motivated Strategies for Learning Questionnaire",
   "acronym": "MSLQ",
   "developers": [
@@ -83,6 +84,7 @@
   "versions": [
     {
       "version_id": "mslq-1991-en",
+      "pid": "hmi0006.1",
       "code": "V1",
       "label": "Original English (manual, 1991)",
       "language": "en",

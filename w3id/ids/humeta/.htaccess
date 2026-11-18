@@ -7,17 +7,18 @@
 #
 # https://w3id.org/humeta/ redirects to https://jlib271.github.io/humeta-library/
 #
-# Identifiers:
-#   https://w3id.org/humeta/instrument/<id>              an instrument
-#   https://w3id.org/humeta/instrument/<id>/<version>    one version of it
-#   https://w3id.org/humeta/instrument/<id>/item/<item>  one item, the same in every version that has it
-#   https://w3id.org/humeta/instrument/<id>.json         its library record (JSON)
-#   https://w3id.org/humeta/construct/<id>               a shared construct
-#   https://w3id.org/humeta/framework/<id>               a theory or framework
-#   https://w3id.org/humeta/<instrument|construct|framework>   the list of them (vocabulary scheme)
-#   https://w3id.org/humeta/metadata-code                the metadata-code scheme
-# Ids are the library's record ids with "_" written as "-".
+# Identifiers are opaque: a type letter and a number, nothing else.
+#   https://w3id.org/humeta/instrument/hmi0004            an instrument
+#   https://w3id.org/humeta/instrument/hmi0004.1          one version of it
+#   https://w3id.org/humeta/instrument/hmi0004/item/q05   one item, the same in every version that has it
+#   https://w3id.org/humeta/construct/hmc0012             a shared construct
+#   https://w3id.org/humeta/framework/hmf0003             a theory or framework
+#   https://w3id.org/humeta/<instrument|construct|framework>   the list of them
+#   https://w3id.org/humeta/metadata-code                 the metadata-code scheme
+# An instrument identifier requested with "Accept: application/json" returns
+# its library record as JSON.
 #
+# Identifier policy: https://github.com/JLib271/humeta-library/blob/main/IDENTIFIERS.md
 # Source: https://github.com/JLib271/humeta-library
 #
 # ## Contact
@@ -28,12 +29,14 @@
 
 RewriteEngine on
 
-RewriteRule ^instrument/([a-z0-9-]+)\.json$ https://jlib271.github.io/humeta-library/data/instruments/$1.json [R=302,L]
-RewriteRule ^instrument/([a-z0-9-]+)/item/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#item-$2 [R=302,NE,L]
-RewriteRule ^instrument/([a-z0-9-]+)/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#versions [R=302,NE,L]
-RewriteRule ^instrument/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/ [R=302,L]
-RewriteRule ^construct/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/constructs/$1/ [R=302,L]
-RewriteRule ^framework/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/frameworks/$1/ [R=302,L]
+RewriteCond %{HTTP_ACCEPT} application/json
+RewriteRule ^instrument/(hmi[0-9]{4})/?$ https://jlib271.github.io/humeta-library/data/instruments/$1.json [R=303,L]
+
+RewriteRule ^instrument/(hmi[0-9]{4})/item/([a-z0-9-]+)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#item-$2 [R=302,NE,L]
+RewriteRule ^instrument/(hmi[0-9]{4})\.([1-9][0-9]*)/?$ https://jlib271.github.io/humeta-library/instruments/$1/#version-$2 [R=302,NE,L]
+RewriteRule ^instrument/(hmi[0-9]{4})/?$ https://jlib271.github.io/humeta-library/instruments/$1/ [R=302,L]
+RewriteRule ^construct/(hmc[0-9]{4})/?$ https://jlib271.github.io/humeta-library/constructs/$1/ [R=302,L]
+RewriteRule ^framework/(hmf[0-9]{4})/?$ https://jlib271.github.io/humeta-library/frameworks/$1/ [R=302,L]
 RewriteRule ^instrument/?$ https://jlib271.github.io/humeta-library/#instrument [R=302,NE,L]
 RewriteRule ^construct/?$ https://jlib271.github.io/humeta-library/#construct [R=302,NE,L]
 RewriteRule ^framework/?$ https://jlib271.github.io/humeta-library/#theory [R=302,NE,L]

@@ -1,5 +1,6 @@
 {
   "id": "class",
+  "pid": "hmi0001",
   "name": "Colorado Learning Attitudes about Science Survey",
   "acronym": "CLASS",
   "developers": [
@@ -78,6 +79,7 @@
   "versions": [
     {
       "version_id": "class-phys-v3",
+      "pid": "hmi0001.1",
       "code": "PhysV3",
       "label": "Physics, version 3",
       "language": "en",
@@ -101,6 +103,7 @@
     },
     {
       "version_id": "class-chem",
+      "pid": "hmi0001.2",
       "code": "Chem",
       "label": "Chemistry",
       "language": "en",

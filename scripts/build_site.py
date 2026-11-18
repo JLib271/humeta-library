@@ -58,6 +58,7 @@ from oem import instrument_metadata as IM  # noqa: E402
 from oem.library import Library  # noqa: E402
 from oem.vocab import PORTAL_URL  # noqa: E402
 from library_archive import DATA_DIRS, DATA_FILES, build_archive  # noqa: E402,F401
+import identifiers as IDS  # noqa: E402
 
 #: This website's address
 LIBRARY_SITE_URL = "https://jlib271.github.io/humeta-library/"
@@ -65,14 +66,22 @@ ASSETS = REPO / "site" / "assets"
 REPO_URL = "https://github.com/JLib271/humeta-library"
 #: The library's own files, as published in data/library.tar.gz for the HuMeta Portal
 COMMONS_URL = "https://stemedplus.hcommons.org/"
-#: Persistent identifiers (w3id.org): https://w3id.org/humeta/<kind>/<slug>, redirected to this website by
+#: Persistent identifiers (w3id.org): https://w3id.org/humeta/<type>/<pid>, redirected to this website by
 #: w3id/ids/humeta/.htaccess. They stay the same if the website moves; only the redirect changes.
-PERSISTENT_BASE = "https://w3id.org/humeta/"
+#: The rules are in IDENTIFIERS.md and scripts/identifiers.py.
+PERSISTENT_BASE = IDS.PERSISTENT_BASE
+#: The site folder of each identifier type's pages
+PID_FOLDERS = {"instrument": "instruments", "construct": "constructs", "framework": "frameworks"}
 
 
-def persistent_uri(kind: str, record_id: str, version_id: str | None = None) -> str:
-    """Persistent identifier of a library record. ``kind``: instrument, construct or framework."""
-    return f"{PERSISTENT_BASE}{kind}/{slug(record_id)}" + (f"/{version_id}" if version_id else "")
+def pid_or_blank(rec: dict) -> str:
+    """The record's persistent identifier (URI), or "" for records without one."""
+    return IDS.uri(rec["pid"]) if rec.get("pid") else ""
+
+
+def persistent_uri(rec: dict) -> str:
+    """Persistent identifier (URI) of a library record or instrument version, from its pid."""
+    return IDS.uri(rec["pid"])
 COLLECTION_URL = "https://works.hcommons.org/collections/humetainstrumentlibrary/"
 STEMEDPLUS_COLLECTION_URL = "https://works.hcommons.org/collections/stemedplus/"
 KCWORKS_UPLOAD_URL = "https://works.hcommons.org/uploads/new"
@@ -225,6 +234,10 @@ class Site:
         self.lib = lib
         self.out = out
         self.vocab = vocab
+        #: The library release being built (CITATION.cff "version", set by scripts/prepare_release.py), if any
+        cff = lib.root / "CITATION.cff"
+        found = re.search(r'^version:\s*"?([^"\n]+)"?\s*$', cff.read_text(encoding="utf-8"), re.M) if cff.exists() else None
+        self.release = found.group(1).strip() if found else ""
         #: The dataset index from scripts/fetch_datasets.py (empty if none was fetched)
         self.dataset_index = datasets or {"format": "humeta-dataset-index", "datasets": []}
         self.datasets: list[dict] = list(self.dataset_index.get("datasets") or [])
@@ -357,7 +370,7 @@ class Site:
                  f'<h1>{h(title)}</h1>',
                  f'<div class="tags"><span class="tag k">{h(label(inst.get("instrument_type")))}</span>{status_tag(review.get("status"))}</div>',
                  f'<p class="lead">{h(inst.get("description"))}</p>',
-                 self.identity(persistent_uri("instrument", iid), inst.get("metadata_code"))]
+                 self.identity(inst, title, inst.get("metadata_code"))]
 
         method = IM.DATA_COLLECTION_METHOD.get(inst.get("instrument_type"))
         facts = [("Gathers data about", ", ".join(self.term("participant_role", r) for r in inst.get("participants", []))),
@@ -447,8 +460,9 @@ class Site:
                 if v.get("form_type") == "item_bank" and v.get("subtest_length"):
                     items = f"{items} in the pool; subtests of {v['subtest_length']}"
                 cite = v.get("citation") or {}
-                vuri = persistent_uri("instrument", iid, v["version_id"])
-                rows.append([h(v.get("label")) + f'<br><span class="note"><code>{h((inst.get("metadata_code") or "") + (v.get("code") or ""))}</code> · '
+                vuri = persistent_uri(v)
+                anchor = f'<span id="version-{h(v["pid"].split(".")[1])}"></span>' if v.get("pid") else ""
+                rows.append([anchor + h(v.get("label")) + f'<br><span class="note"><code>{h((inst.get("metadata_code") or "") + (v.get("code") or ""))}</code> · '
                              f'<a href="{h(vuri)}">{h(vuri)}</a></span>', h(v.get("language")), h(v.get("year")), h(items),
                              h(label(v.get("form_type")) if v.get("form_type") else ""),
                              h(fmt), h(scoring), h(v.get("administration_minutes")),
@@ -540,7 +554,7 @@ class Site:
                                          extra=(f' · <a href="{root}data/evidence/{iid}.json">Evidence (JSON)</a>' if ev else "")
                                          + f' · <a href="{root}data/datacite/{iid}.json">DataCite metadata (JSON)</a>',
                                          name=title, page=self.url("instruments", iid)))
-        ld = json.dumps(with_identifier(IM.to_schema_org(self.lib, iid, self.profile), persistent_uri("instrument", iid)),
+        ld = json.dumps(with_identifier(IM.to_schema_org(self.lib, iid, self.profile), persistent_uri(inst)),
                         ensure_ascii=False).replace("</", "<\\/")
         parts.append(f'<script type="application/ld+json">{ld}</script>')
         self.write_page(self.url("instruments", iid), title, "\n".join(parts), inst.get("description", ""))
@@ -606,7 +620,6 @@ class Site:
     def crosswalk(self, inst: dict, files: list, versions: list) -> str:
         """Item crosswalk: each item (stable item_id and persistent identifier) with its number in every
         version, and its links to items in other versions, possible and confirmed shown apart."""
-        iid = inst["id"]
         order = [v["version_id"] for v in versions if any(vid == v["version_id"] for vid, _ in files)]
         order += sorted(vid for vid, _ in files if vid not in order)
         vlabel = {v["version_id"]: v.get("label", v["version_id"]) for v in versions}
@@ -637,7 +650,9 @@ class Site:
         n_possible = sum(1 for ks in links.values() for k in ks if k.get("status") == "possible" and not k.get("_inverse"))
         return ('<h3 id="crosswalk">Item crosswalk</h3>'
                 '<p class="note">Each item keeps its ID in every version that includes it unchanged; its persistent identifier '
-                f'is <code>{h(persistent_uri("instrument", iid))}/item/&lt;item ID&gt;</code>. A changed item gets a new ID and a '
+                f'is <code>{h(persistent_uri(inst))}/item/&lt;item ID&gt;</code>. Item IDs are labels fixed when the '
+                'item was first added (for most instruments, its number in the first version) and are never renumbered; '
+                'the item\'s number in each version is in the columns. A changed item gets a new ID and a '
                 'link to the item it came from. <strong>Possible</strong> links are proposed and not yet checked; '
                 '<strong>confirmed</strong> links give their basis.'
                 + (f" {n_possible} possible link(s) await checking." if n_possible else "") + "</p>"
@@ -859,7 +874,7 @@ class Site:
                  + "".join(f'<span class="tag k">{h(label(f))}</span>' for f in fw.get("fields", []))
                  + status_tag(fw.get("status")) + "</div>",
                  f'<p class="lead">{h(fw.get("description"))}</p>',
-                 self.identity(persistent_uri("framework", fid))]
+                 self.identity(fw, fw["label"])]
         if fw.get("status") == "draft":
             parts.append('<p class="note">Draft: the description, constructs, relationships, and links to shared constructs '
                          'still need review by experts in the field.</p>')
@@ -937,7 +952,16 @@ class Site:
                  f'<h1>{h(c["label"])}</h1>',
                  f'<div class="tags"><span class="tag k">{h(label(c.get("domain")))}</span></div>',
                  f'<p class="lead">{h(c.get("definition"))}</p>',
-                 self.identity(persistent_uri("construct", cid))]
+                 self.identity(c, c["label"])]
+        if c.get("retired"):
+            # A tombstone: the identifier still resolves, and says what to use instead (McMurry et al. 2017, lessons 6-7)
+            r = c["retired"]
+            rep = self.lib.constructs.get(r.get("replaced_by") or "")
+            parts.insert(2, '<p class="retired"><strong>Retired construct.</strong> '
+                         + (f'Retired on {h(r.get("on"))} by the HuMeta governance committee. ' if r.get("on") else "")
+                         + (f'Use <a href="{root}{self.url("constructs", rep["id"])}">{h(rep["label"])}</a> instead. ' if rep else "")
+                         + 'Its identifier stays valid, so studies that used it can still be read, but new studies '
+                         'should not use it.</p>')
         facts = [("Official name", self.naming_text(c))] if c.get("naming") else []
         if c.get("synonyms"):
             facts.append(("Also called", ", ".join(c["synonyms"])))
@@ -1247,7 +1271,13 @@ class Site:
                  f'The record format is published as JSON Schemas in the {ext(REPO_URL + "/tree/main/schema", "library schema folder")}.</p>',
                  f'<h2>Contribute</h2><p><a href="{root}recommend/">Recommend an instrument</a> that is missing, or use the '
                  '"Suggest a correction" link at the bottom of any record. Suggestions are reviewed before they are added.</p>',
-                 f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)} (accessed {self.today}).</p>']
+                 '<h2 id="identifiers">Persistent identifiers</h2><p>Every instrument, version, item, construct, and theory '
+                 'has a persistent identifier such as <code>https://w3id.org/humeta/instrument/hmi0004</code>, shown at the top '
+                 'of its page with a citation to copy. Identifiers carry no meaning, are never reassigned or deleted, and keep '
+                 'working if this website moves. Use them, not page addresses, to cite or link to records. The '
+                 f'{ext(REPO_URL + "/blob/main/IDENTIFIERS.md", "identifier policy")} follows McMurry et al. (2017), '
+                 f'{ext("https://doi.org/10.1371/journal.pbio.2001414", "Identifiers for the 21st century")}.</p>',
+f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)} (accessed {self.today}).</p>']
         self.write_page("about/", "About the HuMeta Library", "\n".join(parts))
 
     def lib_rubric_credit(self) -> str:
@@ -1335,15 +1365,58 @@ class Site:
         body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
         return f'<div class="tbl {cls}"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
-    @staticmethod
-    def identity(uri: str, code: str | None = None) -> str:
-        """The record's persistent identifier (and, for instruments, its metadata code), under the lead."""
-        return (f'<p class="pid">Persistent identifier: <a href="{h(uri)}"><code>{h(uri)}</code></a>'
-                + (f' · HuMeta metadata code: <code>{h(code)}</code>' if code else "") + "</p>")
+    def identity(self, rec: dict, name: str, code: str | None = None) -> str:
+        """The record's persistent identifier, prominently, with a citation to copy (McMurry et al. 2017, lesson 8).
+
+        Also the compact form (prefix:local ID) and, for instruments, the HuMeta metadata code."""
+        uri = persistent_uri(rec)
+        release = self.release or f"development version built {date.today().isoformat()}"
+        citation = (f"{name}. HuMeta Instrument Library record {rec['pid']}, release {release}. {uri}. "
+                    f'Accessed <span class="today">{date.today().isoformat()}</span>.')
+        return (f'<div class="pid"><p>Persistent identifier: <a href="{h(uri)}"><code class="pid-uri">{h(uri)}</code></a> '
+                f'<button type="button" class="copy" data-copy="{h(uri)}">Copy</button>'
+                f'<br><span class="note">Compact form <code>{h(IDS.curie(rec["pid"]))}</code>'
+                + (f' · HuMeta metadata code <code>{h(code)}</code>' if code else "")
+                + ' · Use this identifier, not this page\'s address, to cite or link to this record. '
+                f'<a href="{REPO_URL}/blob/main/IDENTIFIERS.md">About HuMeta identifiers</a></span></p>'
+                f'<details class="cite"><summary>Cite this record</summary><p class="citation">{citation}</p>'
+                '<button type="button" class="copy" data-copy-from=".citation">Copy citation</button></details></div>')
 
     def record_footer(self, what: str, data_path: str, root: str, extra: str = "", name: str = "", page: str = "") -> str:
         return (f'<p class="dl">Download: <a href="{root}{data_path}">This {h(what.split()[0])} data (JSON)</a>{extra}</p>'
                 + self.recommend_note(what, name, page))
+
+    # ---------- persistent identifiers
+    def identified(self) -> list[tuple[str, dict, str]]:
+        """(type, record, page) for every record with an identifier."""
+        out = [("instrument", inst, self.url("instruments", iid)) for iid, inst in self.lib.instruments.items()]
+        out += [("framework", fw, self.url("frameworks", fid)) for fid, fw in self.lib.frameworks.items()
+                if fw.get("pid") and fw.get("kind") not in IDS.NO_IDENTIFIER_KINDS]
+        out += [("construct", c, self.url("constructs", cid)) for cid, c in self.lib.constructs.items()]
+        return out
+
+    def write_identifier_pages(self) -> None:
+        """A small page at each identifier's address (instruments/hmi0004/ and so on) that forwards to the record.
+
+        w3id.org redirects https://w3id.org/humeta/instrument/hmi0004 here, so the identifier works however the
+        record's page is named. Instrument records are also at data/instruments/<pid>.json, for clients that ask
+        the identifier for JSON."""
+        for kind, rec, page in self.identified():
+            if not rec.get("pid"):
+                continue
+            target = f"../../{page}"
+            stub = (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{h(rec["pid"])}</title>'
+                    f'<meta name="robots" content="noindex"><link rel="canonical" href="{h(LIBRARY_SITE_URL + page)}">'
+                    f'<meta http-equiv="refresh" content="0; url={h(target)}">'
+                    f'<script>location.replace({json.dumps(target)} + location.hash)</script></head>'
+                    f'<body><p><a href="{h(target)}">Go to the record for {h(persistent_uri(rec))}</a></p></body></html>')
+            dest = self.out / PID_FOLDERS[kind] / rec["pid"] / "index.html"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(stub, encoding="utf-8")
+        for iid, inst in self.lib.instruments.items():
+            if inst.get("pid"):
+                shutil.copyfile(self.out / "data" / "instruments" / f"{iid}.json",
+                                self.out / "data" / "instruments" / f"{inst['pid']}.json")
 
     # ---------- data
     def write_archive(self, data: Path) -> None:
@@ -1380,7 +1453,7 @@ class Site:
         for iid in self.lib.instruments:
             (data / "datacite" / f"{iid}.json").write_text(
                 json.dumps(with_alternate_identifier(IM.to_datacite_json(self.lib, iid, self.profile),
-                                                     persistent_uri("instrument", iid)), indent=2, ensure_ascii=False),
+                                                     persistent_uri(self.lib.instruments[iid])), indent=2, ensure_ascii=False),
                 encoding="utf-8")
         for (iid, vid), rec in self.lib.item_files.items():
             clean = {k: v for k, v in rec.items() if not k.startswith("_")}
@@ -1401,22 +1474,23 @@ class Site:
             (data / name).write_text(buf.getvalue(), encoding="utf-8")
 
         write_csv("instruments.csv",
-                  ["id", "name", "acronym", "type", "data_collection_method", "constructs", "participants", "education_levels", "settings",
+                  ["identifier", "id", "name", "acronym", "type", "data_collection_method", "constructs", "participants", "education_levels", "settings",
                    "access", "item_text_shareable",
                    "versions", "evidence_records", "review_status", "page"],
-                  [[i["id"], i["name"], i.get("acronym", ""), i.get("instrument_type", ""),
+                  [[pid_or_blank(i), i["id"], i["name"], i.get("acronym", ""), i.get("instrument_type", ""),
                     IM.DATA_COLLECTION_METHOD.get(i.get("instrument_type"), ""), ";".join(i.get("construct_ids", [])),
                     ";".join(i.get("participants", [])), ";".join(i.get("education_levels", [])), ";".join(i.get("settings", [])),
                     i.get("access", {}).get("access_type", ""), bool(i.get("access", {}).get("item_text_shareable")),
                     len(i.get("versions", [])), len(self.lib.evidence_for(i["id"])), i.get("review", {}).get("status", ""),
                     LIBRARY_SITE_URL + self.url("instruments", i["id"])] for i in self.lib.instruments.values()])
-        write_csv("frameworks.csv", ["id", "label", "kind", "fields", "status", "citation", "doi", "constructs", "page"],
-                  [[f["id"], f["label"], f.get("kind", ""), ";".join(f.get("fields", [])), f.get("status", ""),
+        write_csv("frameworks.csv", ["identifier", "id", "label", "kind", "fields", "status", "citation", "doi", "constructs", "page"],
+                  [[pid_or_blank(f), f["id"], f["label"], f.get("kind", ""), ";".join(f.get("fields", [])), f.get("status", ""),
                     f.get("citation", ""), f.get("doi", ""), ";".join(c["label"] for c in f.get("constructs", [])),
                     LIBRARY_SITE_URL + self.url("frameworks", f["id"])] for f in self.lib.frameworks.values()])
-        write_csv("constructs.csv", ["id", "label", "domain", "definition", "synonyms", "eric", "page"],
-                  [[c["id"], c["label"], c.get("domain", ""), c.get("definition", ""), ";".join(c.get("synonyms", [])),
-                    ";".join(c.get("eric", [])), LIBRARY_SITE_URL + self.url("constructs", c["id"])]
+        write_csv("constructs.csv", ["identifier", "id", "label", "domain", "definition", "synonyms", "eric", "retired", "page"],
+                  [[pid_or_blank(c), c["id"], c["label"], c.get("domain", ""), c.get("definition", ""), ";".join(c.get("synonyms", [])),
+                    ";".join(c.get("eric", [])), (c.get("retired") or {}).get("on", ""),
+                    LIBRARY_SITE_URL + self.url("constructs", c["id"])]
                    for c in self.lib.constructs.values()])
         shutil.copyfile(self.lib.root / "evidence_rubric.json", data / "evidence_rubric.json")
         prof_rows = []
@@ -1461,7 +1535,7 @@ class Site:
             out.append({"type": "theory", "title": f["label"], "url": self.url("frameworks", f["id"]),
                         "kind": label(f.get("kind")), "status": label(f.get("status")), "summary": f.get("description", ""),
                         "fields": f.get("fields", []), "text": " ".join(words)})
-        for c in sorted(self.lib.constructs.values(), key=lambda x: x["label"].lower()):
+        for c in sorted((c for c in self.lib.constructs.values() if not c.get("retired")), key=lambda x: x["label"].lower()):
             fields = sorted({x for fw, _ in self.construct_frameworks(c["id"]) for x in fw.get("fields", [])}
                             | ({"education"} if self.construct_instruments(c["id"]) else set()))
             out.append({"type": "construct", "title": c["label"], "url": self.url("constructs", c["id"]),
@@ -1497,6 +1571,7 @@ class Site:
                         '<h1>Page not found</h1><p>That record may have been renamed. '
                         f'<a href="{LIBRARY_SITE_URL}">Search the library</a>.</p>', depth=0)
         self.write_data()
+        self.write_identifier_pages()
         urls = "".join(f"<url><loc>{h(LIBRARY_SITE_URL + p)}</loc></url>" for p in self.pages)
         (self.out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',

@@ -1,0 +1,40 @@
+name: Link check
+
+# On the 3rd of each month, follow every link from the library's records to other sites
+# (IDENTIFIERS.md, "Links to other sites"). If any fail, open an issue listing them, or update the
+# open one; nothing is posted when every link works.
+
+on:
+  schedule:
+    - cron: "41 14 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Check links
+        id: check
+        run: python scripts/check_links.py --report report.md || echo "broken=true" >> "$GITHUB_OUTPUT"
+      - name: Report broken links
+        if: steps.check.outputs.broken == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Broken links in the library"
+          number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file report.md
+          else
+            gh issue create --title "$title" --body-file report.md
+          fi

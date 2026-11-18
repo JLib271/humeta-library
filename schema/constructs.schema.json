@@ -30,6 +30,11 @@
             "type": "string",
             "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$"
           },
+          "pid": {
+            "type": "string",
+            "pattern": "^hmc[0-9]{4}$",
+            "description": "Persistent identifier, issued by scripts/assign_identifiers.py and recorded in identifiers.csv. Opaque, never changed, reassigned or deleted. See IDENTIFIERS.md. URI: https://w3id.org/humeta/construct/<pid>."
+          },
           "label": {
             "type": "string"
           },

@@ -16,7 +16,7 @@ from pathlib import Path
 
 #: What the archive holds: the records and schemas, not scripts, tests, or the website
 DATA_DIRS = ("instruments", "items", "evidence", "schema")
-DATA_FILES = ("constructs.json", "frameworks.json", "scales.json", "standard_variables.json",
+DATA_FILES = ("constructs.json", "frameworks.json", "identifiers.csv", "scales.json", "standard_variables.json",
               "evidence_rubric.json", "LICENSE.md")
 
 

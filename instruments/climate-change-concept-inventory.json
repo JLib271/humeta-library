@@ -1,5 +1,6 @@
 {
   "id": "climate-change-concept-inventory",
+  "pid": "hmi0002",
   "name": "Climate Change Concept Inventory (Libarkin et al.)",
   "developers": [
     {
@@ -71,6 +72,7 @@
   "versions": [
     {
       "version_id": "ccci-2018",
+      "pid": "hmi0002.1",
       "code": "V1",
       "label": "21-item version (2018)",
       "language": "en",

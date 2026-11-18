@@ -368,6 +368,12 @@ def main(library: Path, vocabularies: str | None = None) -> int:
     import naming_review
     problems += naming_review.problems(library)
 
+    # Persistent identifiers: present, well formed, unique, and never reassigned or deleted (IDENTIFIERS.md)
+    import identifiers
+    fw_list = load(frameworks_path).get("frameworks", []) if frameworks_path.exists() else []
+    problems += identifiers.check(instruments, constructs_doc.get("constructs", []), fw_list,
+                                  identifiers.read_ledger(library))
+
     if problems:
         print(f"Library validation failed with {len(problems)} problem(s):")
         for p in problems:

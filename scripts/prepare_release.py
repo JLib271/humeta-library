@@ -110,7 +110,7 @@ def prepare(root: Path, version: str, out: Path, released: str | None = None, co
     manifest = {"format": "humeta-library-release", "title": "HuMeta Instrument Library", "version": version,
                 "released": released, "commit": commit, "source": REPO_URL, "archive": f"{name}.tar.gz",
                 "sha256": hashlib.sha256(packed).hexdigest(), "files": n_files, "counts": n,
-                "license": "CC-BY-SA-4.0", "identifiers": PERSISTENT_BASE + "<instrument|construct|framework>/<id>"}
+                "license": "CC-BY-SA-4.0", "identifiers": PERSISTENT_BASE + "<instrument|construct|framework>/<pid>", "identifier_policy": REPO_URL + "/blob/main/IDENTIFIERS.md"}
     (out / f"{name}.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     cff = citation(root, version, released)
     (out / "CITATION.cff").write_text(yaml.safe_dump(cff, sort_keys=False, allow_unicode=True), encoding="utf-8")

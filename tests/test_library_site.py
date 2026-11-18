@@ -228,23 +228,36 @@ def test_no_studies_still_builds_the_studies_page(tmp_path):
 
 def test_records_carry_persistent_identifiers(site):
     page = (site / "instruments" / "gci" / "index.html").read_text(encoding="utf-8")
-    assert "https://w3id.org/humeta/instrument/gci" in page and "Libarkin2005V4" in page
-    assert "https://w3id.org/humeta/instrument/gci/gci-v4-2014" in page
+    assert "https://w3id.org/humeta/instrument/hmi0004" in page and "Libarkin2005V4" in page
+    assert "https://w3id.org/humeta/instrument/hmi0004.1" in page and 'id="version-1"' in page
+    assert "humeta.instrument:hmi0004" in page and "Cite this record" in page
     ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', page, re.S).group(1).replace("<\\/", "</"))
-    assert ld["@id"] == "https://w3id.org/humeta/instrument/gci"
+    assert ld["@id"] == "https://w3id.org/humeta/instrument/hmi0004"
     dc = json.loads((site / "data" / "datacite" / "gci.json").read_text(encoding="utf-8"))
-    assert dc["alternateIdentifiers"][0] == {"alternateIdentifier": "https://w3id.org/humeta/instrument/gci",
+    assert dc["alternateIdentifiers"][0] == {"alternateIdentifier": "https://w3id.org/humeta/instrument/hmi0004",
                                              "alternateIdentifierType": "URL"}
-    assert "https://w3id.org/humeta/construct/self-efficacy" in (
+    se = next(c for c in Library.load(ROOT).constructs.values() if c["id"] == "self_efficacy")
+    assert f"https://w3id.org/humeta/construct/{se['pid']}" in (
         site / "constructs" / "self-efficacy" / "index.html").read_text(encoding="utf-8")
     rules = (ROOT / "w3id" / "ids" / "humeta" / ".htaccess").read_text(encoding="utf-8")
     for kind in ("instrument", "construct", "framework", "metadata-code"):
         assert f"^{kind}" in rules
 
 
+def test_identifier_addresses_forward_to_the_record(site):
+    """w3id.org sends https://w3id.org/humeta/instrument/hmi0004 to instruments/hmi0004/, which forwards."""
+    stub = (site / "instruments" / "hmi0004" / "index.html").read_text(encoding="utf-8")
+    assert "../../instruments/gci/" in stub and "location.hash" in stub and "noindex" in stub
+    assert (site / "data" / "instruments" / "hmi0004.json").read_text(encoding="utf-8") == \
+        (site / "data" / "instruments" / "gci.json").read_text(encoding="utf-8")
+    lib = Library.load(ROOT)
+    for c in lib.constructs.values():
+        assert (site / "constructs" / c["pid"] / "index.html").exists()
+
+
 def test_item_crosswalk_shows_possible_and_confirmed_links():
     import types
-    inst = {"id": "demo"}
+    inst = {"id": "demo", "pid": "hmi0099"}
     versions = [{"version_id": "v1", "label": "First"}, {"version_id": "v2", "label": "Second"}]
     files = [("v1", {"items": [{"item_id": "q01", "number": "1"}, {"item_id": "q02", "number": "2"}]}),
              ("v2", {"items": [{"item_id": "q01", "number": "3"},
@@ -257,4 +270,4 @@ def test_item_crosswalk_shows_possible_and_confirmed_links():
     assert "No. in First" in html and "No. in Second" in html and 'id="item-q10"' in html
     assert "Possible links" in html and "Confirmed links" in html and "1 possible link(s) await checking" in html
     assert "source of: split" in html  # q02 shows the confirmed link from q11
-    assert "https://w3id.org/humeta/instrument/demo/item/" in html
+    assert "https://w3id.org/humeta/instrument/hmi0099/item/" in html

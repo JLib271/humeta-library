@@ -104,3 +104,12 @@ header nav a.navbtn { font-weight: 600; }
 .join { background: var(--soft); border: 1px solid var(--softline, #c9dcea); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; color: var(--ink); }
 .join p { margin: 4px 0; }
 .top-join .join { margin: 16px 0 0; font-size: .93rem; }
+/* Persistent identifiers, citations, retired records and outbound links (IDENTIFIERS.md) */
+.pid { margin: 10px 0 14px; padding: 10px 12px; background: var(--soft); border-radius: 8px; }
+.pid p { margin: 0; }
+.pid .pid-uri { font-weight: 600; }
+.pid button.copy { font: inherit; font-size: .8rem; padding: 1px 8px; margin-left: 4px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+.pid details.cite { margin-top: 6px; }
+.pid .citation { margin: 6px 0; }
+.retired { padding: 10px 12px; border-left: 4px solid #a33; background: #fbeeee; border-radius: 4px; }
+a.ext::after { content: " \2197"; font-size: .8em; }
