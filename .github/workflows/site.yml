@@ -3,7 +3,7 @@ name: Library website
 # Builds the HuMeta Library website and publishes it to GitHub Pages
 # (https://jlib271.github.io/humeta-library/). The site includes data/library.tar.gz, the library's
 # own files, which the HuMeta Portal reads; so publishing the site is how a merged change reaches the
-# portal. Rebuilt daily, so new deposits in the STEMEd+ Library's Data and Studies collections appear on
+# portal. Rebuilt daily, so new deposits in the STEMEd+ Commons Library's Data and Studies collections appear on
 # the Datasets and Studies pages, and changes to the portal's code that shape the pages show up.
 
 on:

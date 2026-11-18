@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import gzip
 import hashlib
 import io
 import json
@@ -35,7 +34,6 @@ import os
 import re
 import shutil
 import sys
-import tarfile
 from datetime import date
 from html import escape
 from pathlib import Path
@@ -59,15 +57,13 @@ from oem import evidence as EV  # noqa: E402
 from oem import instrument_metadata as IM  # noqa: E402
 from oem.library import Library  # noqa: E402
 from oem.vocab import PORTAL_URL  # noqa: E402
+from library_archive import DATA_DIRS, DATA_FILES, build_archive  # noqa: E402,F401
 
 #: This website's address
 LIBRARY_SITE_URL = "https://jlib271.github.io/humeta-library/"
 ASSETS = REPO / "site" / "assets"
 REPO_URL = "https://github.com/JLib271/humeta-library"
 #: The library's own files, as published in data/library.tar.gz for the HuMeta Portal
-DATA_DIRS = ("instruments", "items", "evidence", "schema")
-DATA_FILES = ("constructs.json", "frameworks.json", "scales.json", "standard_variables.json",
-              "evidence_rubric.json", "LICENSE.md")
 COMMONS_URL = "https://stemedplus.hcommons.org/"
 #: Persistent identifiers (w3id.org): https://w3id.org/humeta/<kind>/<slug>, redirected to this website by
 #: w3id/ids/humeta/.htaccess. They stay the same if the website moves; only the redirect changes.
@@ -1356,25 +1352,13 @@ class Site:
         The archive is byte-for-byte the same for the same files (sorted, no times or owners), and
         data/library.json gives its checksum, so the portal can tell whether anything changed.
         """
-        root = self.lib.root
-        paths = [root / name for name in DATA_FILES if (root / name).is_file()]
-        for folder in DATA_DIRS:
-            paths += [p for p in (root / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
-        paths = sorted(paths, key=lambda p: p.relative_to(root).as_posix())
-        raw = io.BytesIO()
-        with tarfile.open(fileobj=raw, mode="w", format=tarfile.PAX_FORMAT) as tar:
-            for path in paths:
-                info = tarfile.TarInfo("library/" + path.relative_to(root).as_posix())
-                content = path.read_bytes()
-                info.size, info.mode, info.mtime = len(content), 0o644, 0
-                tar.addfile(info, io.BytesIO(content))
-        packed = gzip.compress(raw.getvalue(), mtime=0)
+        packed, n_files = build_archive(self.lib.root)
         (data / "library.tar.gz").write_bytes(packed)
         manifest = {
             "format": "humeta-library-archive",
             "archive": "library.tar.gz",
             "sha256": hashlib.sha256(packed).hexdigest(),
-            "files": len(paths),
+            "files": n_files,
             "built": self.today,
             "commit": os.environ.get("GITHUB_SHA", ""),
             "source": REPO_URL,
