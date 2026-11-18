@@ -101,6 +101,7 @@
   // Links that leave the library are marked and open in a new tab
   document.querySelectorAll('main a[href^="http"]').forEach(function (a) {
     if (a.host === location.host && a.pathname.indexOf('/humeta-library/') === 0) return;
+    if (a.host === 'w3id.org' && a.pathname.indexOf('/humeta') === 0) return;  // HuMeta's own identifiers
     a.classList.add('ext'); a.target = '_blank'; a.rel = 'noopener';
     if (!a.title) a.title = 'Opens another site in a new tab';
   });

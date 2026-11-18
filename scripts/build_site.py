@@ -1370,8 +1370,8 @@ f'<h2>Cite</h2><p>HuMeta Instrument Library, HuMeta Portal. {h(LIBRARY_SITE_URL)
 
         Also the compact form (prefix:local ID) and, for instruments, the HuMeta metadata code."""
         uri = persistent_uri(rec)
-        release = self.release or f"development version built {date.today().isoformat()}"
-        citation = (f"{name}. HuMeta Instrument Library record {rec['pid']}, release {release}. {uri}. "
+        release = f"release {self.release}" if self.release else f"development version of {date.today().isoformat()}"
+        citation = (f"{name}. HuMeta Instrument Library record {rec['pid']}, {release}. {uri}. "
                     f'Accessed <span class="today">{date.today().isoformat()}</span>.')
         return (f'<div class="pid"><p>Persistent identifier: <a href="{h(uri)}"><code class="pid-uri">{h(uri)}</code></a> '
                 f'<button type="button" class="copy" data-copy="{h(uri)}">Copy</button>'
