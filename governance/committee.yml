@@ -1,0 +1,10 @@
+# The HuMeta governance committee. Only votes from the GitHub accounts listed here are counted in
+# construct-name reviews, and only a chair's /approve applies a decision. Changes to this list go
+# through a pull request that a chair approves.
+chair:
+  - name: Julie C. Libarkin
+    github: JLib271
+members: []
+# Add members like this:
+#  - name: Full Name
+#    github: their-github-username

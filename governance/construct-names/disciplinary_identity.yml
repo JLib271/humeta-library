@@ -1,0 +1,37 @@
+# Governance review of the name of the shared construct "Disciplinary identity" (disciplinary_identity).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: disciplinary_identity
+  name: "Disciplinary identity"
+  status: unresolved
+  rule: "not found yet"
+  source: ""
+  year: ""
+  link: ""
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. Candidate for the science case:
+    Carlone, H. B., & Johnson, A. (2007), Journal of Research in Science Teaching, 44(8), 1187-1218,
+    doi:10.1002/tea.20237 ('science identity'); its scope is narrower than this construct.
+  other_names: >-
+    science identity; STEM identity; physics identity; math identity; engineering identity;
+    recognition
+  definition: >-
+    Seeing oneself, and being recognized by others, as the kind of person who does a discipline
+    (e.g. a physics person, a scientist).

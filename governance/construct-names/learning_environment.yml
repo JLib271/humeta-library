@@ -1,0 +1,34 @@
+# Governance review of the name of the shared construct "Learning environment perceptions" (learning_environment).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: learning_environment
+  name: "Learning environment perceptions"
+  status: unresolved
+  rule: "not found yet"
+  source: ""
+  year: ""
+  link: ""
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. First published use not yet
+    identified.
+  other_names: >-
+    classroom climate; course climate; perceived support; trust in instructors
+  definition: >-
+    Learners' perceptions of course structure, support, fairness and climate.

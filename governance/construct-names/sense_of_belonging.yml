@@ -1,0 +1,34 @@
+# Governance review of the name of the shared construct "Sense of Belonging" (sense_of_belonging).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: sense_of_belonging
+  name: "Sense of Belonging"
+  status: proposed
+  rule: "1. ERIC descriptor"
+  source: >-
+    ERIC Thesaurus descriptor "Sense of Belonging"
+  year: ""
+  link: "https://eric.ed.gov/?ti=Sense+of+Belonging"
+  notes_for_reviewers: ""
+  other_names: >-
+    belonging; social fit; membership; acceptance; belonging uncertainty
+  definition: >-
+    Feeling accepted, valued and included as a member of a course, discipline, institution or
+    community.

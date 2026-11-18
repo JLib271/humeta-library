@@ -1,0 +1,38 @@
+# Governance review of the name of the shared construct "Subjective task value" (task_value).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: task_value
+  name: "Subjective task value"
+  status: proposed
+  rule: "3. First published use"
+  source: >-
+    Eccles (Parsons), J., Adler, T. F., Futterman, R., Goff, S. B., Kaczala, C. M., Meece, J. L., &
+    Midgley, C. (1983). Expectancies, values, and academic behaviors. In J. T. Spence (Ed.),
+    Achievement and achievement motives. W. H. Freeman.
+  year: 1983
+  link: ""
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. The expectancy-value model's term
+    for how interesting, important, useful and costly a task is judged to be.
+  other_names: >-
+    Task value; utility value; attainment value; intrinsic value; perceived cost; expectancy-value
+  definition: >-
+    How interesting, important and useful a person judges a subject or task to be, and what it costs
+    them to engage.

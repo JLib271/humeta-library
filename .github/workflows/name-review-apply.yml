@@ -1,0 +1,53 @@
+name: Apply construct-name decisions
+
+# A chair runs this after commenting /approve on review issues that reached consensus. It writes the
+# approved decisions, with every member's vote, into governance/construct-names/ and constructs.json,
+# checks the library, and opens a pull request that closes the issues when merged.
+# Needs Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: name-review
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: JLib271/HuMeta
+          path: .humeta
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Apply approved decisions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/naming_votes.py apply --summary _pr.md
+      - name: Check the library
+        run: python scripts/validate_library.py --vocabularies .humeta/standard/humeta/vocabularies.json
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- constructs.json governance; then echo "Nothing approved to apply."; exit 0; fi
+          branch="name-review/apply-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add constructs.json governance
+          git commit -m "Construct names: apply the governance committee's approved decisions"
+          git push origin "$branch"
+          gh pr create --title "Construct names: committee decisions" --body-file _pr.md --head "$branch"

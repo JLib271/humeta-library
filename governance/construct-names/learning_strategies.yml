@@ -1,0 +1,35 @@
+# Governance review of the name of the shared construct "Learning Strategies" (learning_strategies).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: learning_strategies
+  name: "Learning Strategies"
+  status: proposed
+  rule: "1. ERIC descriptor"
+  source: >-
+    ERIC Thesaurus descriptor "Learning Strategies"
+  year: ""
+  link: "https://eric.ed.gov/?ti=Learning+Strategies"
+  notes_for_reviewers: ""
+  other_names: >-
+    Study and learning strategies; study strategies; study habits; rehearsal; elaboration;
+    organization; help seeking; peer learning
+  definition: >-
+    Specific cognitive and resource-management strategies used when studying, such as rehearsal,
+    elaboration, organization and help seeking.

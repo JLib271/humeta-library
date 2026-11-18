@@ -1,0 +1,40 @@
+# Governance review of the name of the shared construct "Epistemological beliefs" (epistemological_beliefs).
+# Fill in the decision below and open a pull request. See README.md in this folder.
+
+decision:        # confirm, rename, reject, or research_more
+reviewer:        # your name
+reviewed_on:     # date, YYYY-MM-DD
+comments: ""
+
+# Only for rename:
+agreed_name: ""
+agreed_rule:     # eric, icpsr, or first_use
+agreed_source: "" # the ERIC or ICPSR term, or the full citation of the first published use
+agreed_link: ""   # the ERIC or ICPSR page, or the first use's DOI or address
+agreed_year:     # first use only
+
+# Only for reject:
+replaced_by:     # the id of the construct to use instead, if any
+
+# The evidence for the name as proposed (do not edit; it comes from constructs.json).
+proposed:
+  construct_id: epistemological_beliefs
+  name: "Epistemological beliefs"
+  status: proposed
+  rule: "3. First published use"
+  source: >-
+    Schommer, M. (1990). Effects of beliefs about the nature of knowledge on comprehension. Journal
+    of Educational Psychology, 82(3), 498-504.
+  year: 1990
+  link: ""
+  notes_for_reviewers: >-
+    No ERIC descriptor or ICPSR term with exactly this meaning. Earlier: Schommer's 1989
+    dissertation and Center for the Study of Reading Technical Report No. 484 (1989) use the term,
+    and Ryan (1984) wrote of 'epistemological standards'. Check which counts as first use; add the
+    DOI.
+  other_names: >-
+    Beliefs about the discipline and learning it; epistemology; expert-like beliefs; attitudes about
+    science; views about science; learning attitudes
+  definition: >-
+    Beliefs about the nature of disciplinary knowledge and about what learning the discipline
+    involves, often compared with expert views.
