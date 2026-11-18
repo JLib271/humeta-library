@@ -47,3 +47,23 @@ def test_validator_rejects_library_only_and_deprecated_terms(tmp_path):
 
 def test_unreadable_vocabularies_fail_when_named(tmp_path):
     assert validate_library.main(ROOT, str(tmp_path / "missing.json")) == 1
+
+
+def test_instrument_metadata_codes_are_unique(tmp_path, capsys):
+    root = _copy(tmp_path)
+    path = root / "instruments" / "gci.json"
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    rec["metadata_code"] = "Pintrich1991"  # already the MSLQ's code
+    path.write_text(json.dumps(rec), encoding="utf-8")
+    assert validate_library.main(root, _vocabularies()) == 1
+    assert "metadata_code 'Pintrich1991'" in capsys.readouterr().out
+
+
+def test_psyctests_ids_must_be_dois(tmp_path):
+    root = _copy(tmp_path)
+    path = root / "instruments" / "mslq.json"
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    rec["identifiers"]["records"].append({"registry": "psyctests", "id": "9999-22083-000",
+                                          "url": "https://doi.org/10.1037/t22083-000"})
+    path.write_text(json.dumps(rec), encoding="utf-8")
+    assert validate_library.main(root, _vocabularies()) == 1

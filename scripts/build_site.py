@@ -491,6 +491,20 @@ class Site:
         if oc.get("text"):
             parts.append(f'<p><strong>Original citation:</strong> {h(oc["text"])}{doi_link(oc.get("doi"))}'
                          + (f' {ext(oc["url"], "Link")}' if oc.get("url") else "") + "</p>")
+        if inst.get("metadata_code"):
+            parts.append(f'<p><strong>HuMeta metadata code:</strong> <code>{h(inst["metadata_code"])}</code> '
+                         '<span class="note">(the measure part of Construct_Measure_Item_Target codes; never changes)</span></p>')
+        idents = inst.get("identifiers") or {}
+        if idents:
+            names = {"psyctests": "APA PsycTests", "zis": "ZIS (GESIS)", "open_test_archive": "Open Test Archive (ZPID)",
+                     "fdz_bildung": "FDZ Bildung (DIPF)", "loinc": "LOINC", "eric": "ERIC", "physport": "PhysPort",
+                     "chiral": "CHIRAL", "edinstruments": "edinstruments.org (AIR)"}
+            items = "".join(f"<li>{ext(r['url'], names.get(r['registry'], r['registry']) + (': ' + r['id'] if r.get('id') else ''))}</li>"
+                            for r in idents.get("records", []))
+            status = ("Registries checked" if idents.get("status") == "verified"
+                      else "Not yet checked against all registries") + (f" ({h(idents['checked'])})" if idents.get("checked") else "")
+            parts.append(f"<p><strong>Also registered or catalogued in:</strong> <span class=\"note\">{status}.</span></p>"
+                         + (f"<ul>{items}</ul>" if items else "<p class=\"note\">No records found yet.</p>"))
         if inst.get("info_sources"):
             parts.append("<p><strong>Information drawn from:</strong></p><ul>"
                          + "".join(f"<li>{ext(u)}</li>" for u in inst["info_sources"]) + "</ul>")

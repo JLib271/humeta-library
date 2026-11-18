@@ -13,6 +13,13 @@
     }
   ],
   "variable_prefix": "sbm",
+  "metadata_code": "Good2012",
+  "identifiers": {
+    "status": "needs_check",
+    "checked": "2026-11-18",
+    "note": "PsycTests (APA, subscription) and ZIS have not been searched by a reviewer yet.",
+    "records": []
+  },
   "instrument_type": "self_report_scale",
   "participants": [
     "students"
