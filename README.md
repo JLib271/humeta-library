@@ -69,9 +69,11 @@ schema/                      JSON Schemas for every record type
 suggestions/                 recommendations awaiting review (see suggestions/README.md)
 scripts/validate_library.py  run before opening a pull request
 scripts/build_site.py        builds the website (uses the HuMeta Portal's code)
-scripts/fetch_datasets.py    reads the STEMEd+ Library's Data and Studies collections for the Datasets and Studies pages
+scripts/fetch_datasets.py    reads the STEMEd+ Commons Library's Data and Studies collections for the Datasets and Studies pages
 scripts/check_recommendation.py, kcworks_lookup.py
                              check the STEMEd+ Commons Library deposit on a recommendation
+scripts/prepare_release.py   packages a release for archiving (see Releases)
+w3id/ids/humeta/.htaccess    the redirect rules behind the persistent identifiers
 site/assets/                 the website's styles, script, and logos
 ```
 
@@ -325,6 +327,36 @@ Ids are the records' ids with `_` written as `-`. The instrument pages, their
 schema.org description (`@id`) and their DataCite metadata
 (`alternateIdentifiers`) carry the identifier; codebooks and DDI files from
 the HuMeta Portal use it to name instruments and constructs.
+
+## Releases
+
+Each release of the library is archived permanently with a DOI, so the
+metadata outlive this repository and website, and anyone can cite the exact
+version they used.
+
+1. **Tag the release** with its date: on GitHub, *Releases → Draft a new release
+   → Choose a tag*, type `v2026.11.18` (today's date; add `.2` for a second
+   release the same day) and publish; or run the **Release** workflow by hand
+   with the version. The workflow checks the library, then attaches to the
+   release:
+   - `humeta-library-<version>.tar.gz`: the records and schemas (byte for byte
+     the archive the website publishes for the same files);
+   - `humeta-library-<version>.json`: version, date, commit, SHA-256 checksum,
+     and counts;
+   - `CITATION.cff` for this version;
+   - `deposit.md`: what to fill in on the deposit form;
+
+   and asks [Software Heritage](https://www.softwareheritage.org/) to archive
+   the repository.
+2. **Deposit it** in the HuMeta Instrument Library sub-collection of the
+   STEMEd+ Commons Library, following `deposit.md`. The first release is a new
+   upload; every later release is a **New version** of the same record, so the
+   library keeps one DOI for all versions and each version gets its own.
+3. After the first deposit, add the all-versions DOI to `CITATION.cff` as
+   `doi:`.
+
+To check a release locally: `python scripts/prepare_release.py --version
+2026.11.18 --out _release`.
 
 ## Review status
 
