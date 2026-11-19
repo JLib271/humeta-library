@@ -4,6 +4,10 @@ HuMeta gives every record in the HuMeta Instrument Library a persistent identifi
 instrument, instrument version, item, shared construct, and theory or framework. This page
 says what the identifiers look like, what they promise, and how to cite them.
 
+**Status:** adopted November 2026. The identifiers start resolving once w3id.org accepts the
+`/humeta/` registration (pending). Until the library's identifier work is merged, some files this
+page links to (`identifiers.csv`, the redirect rules) are not on the main branch yet.
+
 The policy follows the ten lessons in McMurry, J. A., et al. (2017). Identifiers for the 21st
 century: How to design, provision, and reuse persistent identifiers to maximize utility and
 impact of life science data. *PLOS Biology*, 15(6), e2001414.
