@@ -55,7 +55,7 @@ names; it is a readable label, not an identifier, and it is never relied on for 
 Item IDs are the one partial exception: an item's ID is fixed when the item is first added to
 the library, usually from its number in the first version that has it (`q05`). It is never
 renumbered, so in later versions the item's number and its ID can differ. Each version's item
-number is recorded separately.
+number is recorded separately. A changed item gets a new ID and a link to the item it came from (see Items across versions).
 
 ## Versions
 
@@ -156,3 +156,5 @@ obsolete.
 | 8. Make URIs clear and findable | Every record page shows its identifier prominently, with a copy button, its compact form, and a citation that includes the release and access date. |
 | 9. Document the identifiers you issue and use | This page, linked from every record page, the repository README and the website's About page. |
 | 10. Reference and display responsibly | External links go through their resolvers, are marked, and open in a new tab; a monthly check reports broken links. |
+
+The HuMeta Governance community can adopt changes. These will be recorded as updates.
